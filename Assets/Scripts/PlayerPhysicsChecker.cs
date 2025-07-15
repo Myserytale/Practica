@@ -80,8 +80,8 @@ public class PlayerPhysicsChecker : MonoBehaviour
     void ConfigureRigidbody(Rigidbody rb)
     {
         rb.mass = playerMass;
-        rb.drag = playerDrag;
-        rb.angularDrag = playerAngularDrag;
+        rb.linearDamping = playerDrag;
+        rb.angularDamping = playerAngularDrag;
         
         if (freezeRotation)
         {
