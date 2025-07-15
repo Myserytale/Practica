@@ -80,16 +80,24 @@ public class PlayerPhysicsChecker : MonoBehaviour
     void ConfigureRigidbody(Rigidbody rb)
     {
         rb.mass = playerMass;
-        rb.linearDamping = playerDrag;
-        rb.angularDamping = playerAngularDrag;
+        rb.drag = playerDrag;
+        rb.angularDrag = playerAngularDrag;
         
         if (freezeRotation)
         {
-            rb.freezeRotation = true;
+            rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        }
+        else
+        {
+            rb.constraints = RigidbodyConstraints.None;
         }
         
         // Make sure it's not kinematic
         rb.isKinematic = false;
+
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+
         
         if (showDebugInfo)
         {

@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 9048626503133307414}
   - component: {fileID: 8199346569002221912}
   m_Layer: 0
-  m_Name: Canyon
+  m_Name: Canyon 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
