@@ -50,9 +50,6 @@ public class SelectionManager : MonoBehaviour
         // This raycast ONLY looks for objects on the 'interactionLayerMask' (Layer 7)
         if (Physics.Raycast(ray, out hit, maxDetectionDistance, interactionLayerMask))
         {
-            // SUCCESS: The ray ignored the ground and hit an interactable object.
-            Debug.Log($"SUCCESS: Raycast hit '{hit.collider.name}' on the correct layer.");
-            
             InteractableObject interactable = hit.collider.GetComponent<InteractableObject>();
             if (interactable != null)
             {
@@ -64,33 +61,56 @@ public class SelectionManager : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning($"Object '{hit.collider.name}' is on the Interactable layer but is missing the InteractableObject script.");
                 ClearSelection();
             }
         }
         else
         {
-            // The ray did NOT hit anything on the interactable layer.
-            // Let's use RaycastAll to see everything the ray is passing through.
-            RaycastHit[] allHits = Physics.RaycastAll(ray, maxDetectionDistance);
-            if (allHits.Length > 0)
-            {
-                Debug.LogWarning($"Raycast MISSED interactable layer. Here's everything it hit in order:");
-                foreach (var singleHit in allHits)
-                {
-                    // This will show you the ground, then the tree, etc.
-                    Debug.LogWarning($"-- Hit '{singleHit.collider.name}' on layer '{LayerMask.LayerToName(singleHit.collider.gameObject.layer)}' (Layer {singleHit.collider.gameObject.layer})");
-                }
-            }
             ClearSelection();
         }
     }
 
-    private void HandleInteractionInput()
+        private void HandleInteractionInput()
     {
         if (Input.GetKeyDown(KeyCode.E) && currentInteractable != null)
         {
-            Debug.Log($"Interacted with: {currentInteractable.GetItemName()}");
+            // Handle different item types
+            string itemName = currentInteractable.ItemName; // Use the base name
+            Debug.Log($"Attempting to interact with: {itemName}");
+            
+            // Simple pickup logic for items like "Stone"
+            if (itemName.ToLower().Contains("rock") || itemName.ToLower().Contains("stone"))
+            {
+                PickupStone(currentInteractable);
+            }
+            else
+            {
+                // For everything else (like bushes), call the general Interact method
+                currentInteractable.Interact();
+            }
+        }
+    }
+
+     private void PickupStone(InteractableObject stone)
+    {
+        Debug.Log($"Picked up: {stone.GetItemName()}");
+        
+        // Add to inventory using the new system
+        bool success = InventoryManager.Instance.AddItem(stone.GetItemName(), 1);
+
+        if (success)
+        {
+            // Remove the stone from the world
+            Destroy(stone.gameObject);
+
+            // Clear selection since object is gone
+            ClearSelection();
+        }
+        else
+        {
+            Debug.Log("Inventory is full!");
+            Debug.Log("Failed to add item. Inventory might be full.");
+
         }
     }
 

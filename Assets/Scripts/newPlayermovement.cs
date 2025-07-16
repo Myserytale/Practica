@@ -1,11 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.InputSystem; // Add this line to use the Keyboard class
 
-public class PlayerMovement : MonoBehaviour
+public class NewPlayerMovement : MonoBehaviour
 {
-    [Header("Movement")]
+[Header("Movement")]
     public CharacterController controller;
     public float speed = 12f;
     public float gravity = -9.81f * 2;
