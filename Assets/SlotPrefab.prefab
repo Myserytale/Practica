@@ -103,7 +103,7 @@ RectTransform:
   m_GameObject: {fileID: 7312345671021145505}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: -0.5112, y: 0.4284, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2623780046896698241}
@@ -167,6 +167,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   icon: {fileID: 4461672091482493447}
   quantityText: {fileID: 5138875021658187958}
+  nameText: {fileID: 0}
+  slotIndex: 0
+  isToolbeltSlot: 0
 --- !u!1 &8706314485368481421
 GameObject:
   m_ObjectHideFlags: 0

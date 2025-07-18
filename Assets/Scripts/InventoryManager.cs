@@ -1,5 +1,7 @@
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections.Generic;
+using System;
+using System.Linq;
 
 public class InventoryManager : MonoBehaviour
 {
@@ -10,109 +12,119 @@ public class InventoryManager : MonoBehaviour
         {
             if (_instance == null)
             {
-                Debug.LogError("InventoryManager is NULL.");
+                _instance = FindObjectOfType<InventoryManager>();
+                if (_instance == null)
+                {
+                    GameObject obj = new GameObject("InventoryManager");
+                    _instance = obj.AddComponent<InventoryManager>();
+                }
             }
             return _instance;
         }
     }
 
+    [Header("Inventory Data")]
+    public List<Item> itemDatabase;
+
     [Header("Inventory Settings")]
-    [SerializeField] private List<InventorySlot> slots = new List<InventorySlot>();
     public int inventorySize = 20;
+    public int toolBeltSize = 5;
 
-    [Header("Item Database")]
-    public List<Item> itemDatabase = new List<Item>();
+    private List<InventorySlot> inventory;
+    private List<InventorySlot> toolbelt;
 
-    private bool isInitialized = false;
+    public event Action onInventoryChanged;
 
     private void Awake()
     {
         if (_instance != null && _instance != this)
         {
-            Debug.LogWarning("Duplicate InventoryManager found. Destroying it.");
             Destroy(gameObject);
+            return;
         }
-        else
+        _instance = this;
+        DontDestroyOnLoad(gameObject);
+
+        inventory = new List<InventorySlot>(inventorySize);
+        for (int i = 0; i < inventorySize; i++)
         {
-            _instance = this;
-            DontDestroyOnLoad(gameObject);
-            Initialize();
+            inventory.Add(new InventorySlot());
+        }
+
+        toolbelt = new List<InventorySlot>(toolBeltSize);
+        for (int i = 0; i < toolBeltSize; i++)
+        {
+            toolbelt.Add(new InventorySlot());
         }
     }
 
-    private void Initialize()
+    public Item GetItemByName(string name)
     {
-        if (isInitialized) return;
-
-        slots.Clear();
-        for (int i = 0; i < inventorySize; i++)
-        {
-            slots.Add(new InventorySlot(null, 0));
-        }
-        isInitialized = true;
-        Debug.Log("Inventory Initialized with " + slots.Count + " slots.");
+        return itemDatabase.FirstOrDefault(item => item.itemName.Equals(name, StringComparison.OrdinalIgnoreCase));
     }
 
     public bool AddItem(string itemName, int amount = 1)
     {
-        if (!isInitialized) Initialize(); // Failsafe
-
-        Item itemToAdd = GetItemFromDatabase(itemName);
+        Item itemToAdd = GetItemByName(itemName);
         if (itemToAdd == null)
         {
-            Debug.LogError($"CRITICAL: Item '{itemName}' not found in the database.");
+            Debug.LogWarning($"Item '{itemName}' not found in the database.");
             return false;
         }
 
-        foreach (InventorySlot slot in slots)
+        foreach (var slot in inventory)
         {
             if (slot.item == itemToAdd && slot.quantity < itemToAdd.maxStackSize)
             {
-                int spaceLeft = itemToAdd.maxStackSize - slot.quantity;
-                int amountToAdd = Mathf.Min(amount, spaceLeft);
-                slot.quantity += amountToAdd;
-                amount -= amountToAdd;
+                int amountCanAdd = itemToAdd.maxStackSize - slot.quantity;
+                int amountToAddNow = Mathf.Min(amount, amountCanAdd);
+                slot.quantity += amountToAddNow;
+                amount -= amountToAddNow;
                 if (amount <= 0)
                 {
-                    Debug.Log($"Added {amountToAdd} {itemName}(s) to an existing stack.");
+                    onInventoryChanged?.Invoke();
                     return true;
                 }
             }
         }
 
-        foreach (InventorySlot slot in slots)
+        foreach (var slot in inventory)
         {
             if (slot.item == null)
             {
                 slot.item = itemToAdd;
                 slot.quantity = amount;
-                Debug.Log($"Added {amount} {itemName}(s) to a new empty slot.");
+                onInventoryChanged?.Invoke();
                 return true;
             }
         }
 
-        Debug.LogWarning("Inventory is full!");
+        Debug.Log("Inventory is full!");
         return false;
     }
 
-    private Item GetItemFromDatabase(string itemName)
+    public void SwapItems(int sourceIndex, bool sourceIsToolbelt, int destIndex, bool destIsToolbelt)
     {
-        foreach (Item item in itemDatabase)
-        {
-            if (item != null && item.itemName.Equals(itemName, System.StringComparison.OrdinalIgnoreCase))
-            {
-                return item;
-            }
-        }
-        return null;
+        var sourceList = sourceIsToolbelt ? toolbelt : inventory;
+        var destList = destIsToolbelt ? toolbelt : inventory;
+
+        if (sourceIndex >= sourceList.Count || destIndex >= destList.Count) return;
+
+        InventorySlot sourceSlot = sourceList[sourceIndex];
+        InventorySlot destSlot = destList[destIndex];
+
+        var tempItem = destSlot.item;
+        var tempQuantity = destSlot.quantity;
+
+        destSlot.item = sourceSlot.item;
+        destSlot.quantity = sourceSlot.quantity;
+
+        sourceSlot.item = tempItem;
+        sourceSlot.quantity = tempQuantity;
+
+        onInventoryChanged?.Invoke();
     }
 
-    public InventorySlot GetSlot(int index)
-    {
-        if (index >= 0 && index < slots.Count)
-        {
-            return slots[index];
-        }
-        return null;
-    }
+    public InventorySlot GetSlot(int index) => (index < inventory.Count) ? inventory[index] : null;
+    public InventorySlot GetToolSlot(int index) => (index < toolbelt.Count) ? toolbelt[index] : null;
 }

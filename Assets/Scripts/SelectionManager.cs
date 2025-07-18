@@ -47,72 +47,43 @@ public class SelectionManager : MonoBehaviour
             Debug.DrawRay(ray.origin, ray.direction * maxDetectionDistance, Color.cyan);
         }
 
-        // This raycast ONLY looks for objects on the 'interactionLayerMask' (Layer 7)
         if (Physics.Raycast(ray, out hit, maxDetectionDistance, interactionLayerMask))
         {
             InteractableObject interactable = hit.collider.GetComponent<InteractableObject>();
             if (interactable != null)
             {
-                if (interactable != currentInteractable)
+                // If we are looking at a different object, or if the text is currently empty, update it.
+                if (interactable != currentInteractable || interaction_text.text == "")
                 {
                     currentInteractable = interactable;
-                    interaction_text.text = currentInteractable.GetItemName();
                 }
+                // Always update the text to ensure it's showing for the current object.
+                interaction_text.text = interactable.GetItemName();
             }
             else
             {
                 ClearSelection();
             }
         }
+        
         else
         {
             ClearSelection();
         }
-    }
+        }
 
         private void HandleInteractionInput()
     {
         if (Input.GetKeyDown(KeyCode.E) && currentInteractable != null)
         {
-            // Handle different item types
-            string itemName = currentInteractable.ItemName; // Use the base name
-            Debug.Log($"Attempting to interact with: {itemName}");
-            
-            // Simple pickup logic for items like "Stone"
-            if (itemName.ToLower().Contains("rock") || itemName.ToLower().Contains("stone"))
-            {
-                PickupStone(currentInteractable);
-            }
-            else
-            {
-                // For everything else (like bushes), call the general Interact method
-                currentInteractable.Interact();
-            }
-        }
-    }
+            // The InteractableObject now handles its own logic (pickup vs. deplete)
+            currentInteractable.Interact();
 
-     private void PickupStone(InteractableObject stone)
-    {
-        Debug.Log($"Picked up: {stone.GetItemName()}");
-        
-        // Add to inventory using the new system
-        bool success = InventoryManager.Instance.AddItem(stone.GetItemName(), 1);
-
-        if (success)
-        {
-            // Remove the stone from the world
-            Destroy(stone.gameObject);
-
-            // Clear selection since object is gone
+            // After interacting, the object might be destroyed, so we clear the selection text.
             ClearSelection();
         }
-        else
-        {
-            Debug.Log("Inventory is full!");
-            Debug.Log("Failed to add item. Inventory might be full.");
-
-        }
     }
+     
 
     private void ClearSelection()
     {
