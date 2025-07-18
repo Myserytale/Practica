@@ -1,15 +1,20 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 public class InventoryUI : MonoBehaviour
 {
     [Header("UI References")]
     public GameObject inventoryPanel;
     public Transform slotsParent;
-    public Transform toolSlotsParent; // This is now optional
+    public Transform toolSlotsParent; 
 
     [Header("Prefabs")]
     public GameObject itemPrefab;
+
+    [Header("Toolbar Selection")]
+    public Color selectedSlotColor = Color.yellow;
+    public Color defaultSlotColor = Color.white;
 
     private List<InventoryUISlot> inventorySlots = new List<InventoryUISlot>();
     private List<InventoryUISlot> toolBarSlots = new List<InventoryUISlot>();
@@ -42,6 +47,13 @@ public class InventoryUI : MonoBehaviour
 
         inventoryPanel.SetActive(false);
         InventoryManager.Instance.onInventoryChanged += OnInventoryChanged;
+        InventoryManager.Instance.onSelectedToolbeltSlotChanged += UpdateToolbarSelectionVisuals;
+
+        // Set initial selection visual
+        if (toolBarSlots.Count > 0)
+        {
+            UpdateToolbarSelectionVisuals(0);
+        }
     }
 
     private void OnDestroy()
@@ -49,19 +61,22 @@ public class InventoryUI : MonoBehaviour
         if (InventoryManager.Instance != null)
         {
             InventoryManager.Instance.onInventoryChanged -= OnInventoryChanged;
+            InventoryManager.Instance.onSelectedToolbeltSlotChanged -= UpdateToolbarSelectionVisuals;
         }
     }
 
     private void OnInventoryChanged()
     {
-        if (inventoryPanel.activeSelf)
-        {
-            UpdateUI();
-        }
+        UpdateUI();
     }
 
     void Update()
     {
+
+        if (DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive)
+        {
+            return; // Ignore input if dialogue is active
+        }
         if (Input.GetKeyDown(KeyCode.I))
         {
             bool isActive = !inventoryPanel.activeSelf;
@@ -74,12 +89,37 @@ public class InventoryUI : MonoBehaviour
                 UpdateUI();
             }
         }
+
+        HandleToolbarSelectionInput();
+    }
+
+    private void HandleToolbarSelectionInput()
+    {
+        for (int i = 0; i < toolBarSlots.Count; i++)
+        {
+            if (Input.GetKeyDown(KeyCode.Alpha1 + i))
+            {
+                InventoryManager.Instance.SetSelectedToolbeltSlot(i);
+            }
+        }
     }
 
     public void UpdateUI()
     {
         ClearAllSlots();
         DrawAllSlots();
+    }
+
+    private void UpdateToolbarSelectionVisuals(int selectedIndex)
+    {
+        for (int i = 0; i < toolBarSlots.Count; i++)
+        {
+            Image slotImage = toolBarSlots[i].GetComponent<Image>();
+            if (slotImage != null)
+            {
+                slotImage.color = (i == selectedIndex) ? selectedSlotColor : defaultSlotColor;
+            }
+        }
     }
 
     private void ClearAllSlots()
@@ -99,6 +139,7 @@ public class InventoryUI : MonoBehaviour
 
     private void DrawAllSlots()
     {
+        // Draw inventory slots
         for (int i = 0; i < inventorySlots.Count; i++)
         {
             InventorySlot dataSlot = InventoryManager.Instance.GetSlot(i);
@@ -109,6 +150,7 @@ public class InventoryUI : MonoBehaviour
             }
         }
 
+        // Draw toolbar slots
         if (toolBarSlots.Count > 0)
         {
             for (int i = 0; i < toolBarSlots.Count; i++)

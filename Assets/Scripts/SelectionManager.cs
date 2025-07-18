@@ -16,6 +16,8 @@ public class SelectionManager : MonoBehaviour
     private Text interaction_text;
     private InteractableObject currentInteractable;
     private Camera mainCamera;
+    private NPCController currentNPC;
+    
 
     private void Start()
     {
@@ -37,7 +39,7 @@ public class SelectionManager : MonoBehaviour
         HandleInteractionInput();
     }
 
-    private void HandleDetection()
+       private void HandleDetection()
     {
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
@@ -49,15 +51,22 @@ public class SelectionManager : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, maxDetectionDistance, interactionLayerMask))
         {
+            // Check for an NPC first
+            NPCController npc = hit.collider.GetComponent<NPCController>();
+            if (npc != null)
+            {
+                currentNPC = npc;
+                currentInteractable = null; // Ensure we're not targeting an object
+                interaction_text.text = npc.GetInteractionText();
+                return; // Found an NPC, no need to check for objects
+            }
+
+            // If no NPC, check for an interactable object
             InteractableObject interactable = hit.collider.GetComponent<InteractableObject>();
             if (interactable != null)
             {
-                // If we are looking at a different object, or if the text is currently empty, update it.
-                if (interactable != currentInteractable || interaction_text.text == "")
-                {
-                    currentInteractable = interactable;
-                }
-                // Always update the text to ensure it's showing for the current object.
+                currentInteractable = interactable;
+                currentNPC = null; // Ensure we're not targeting an NPC
                 interaction_text.text = interactable.GetItemName();
             }
             else
@@ -65,22 +74,33 @@ public class SelectionManager : MonoBehaviour
                 ClearSelection();
             }
         }
-        
         else
         {
             ClearSelection();
         }
-        }
+    }
 
         private void HandleInteractionInput()
     {
-        if (Input.GetKeyDown(KeyCode.E) && currentInteractable != null)
+        if (Input.GetKeyDown(KeyCode.E))
         {
-            // The InteractableObject now handles its own logic (pickup vs. deplete)
-            currentInteractable.Interact();
+            if (currentNPC != null)
+            {
+                currentNPC.Interact();
+                ClearSelection();
+            }
+            else if (currentInteractable != null)
+            {
+                // Get the currently selected item from the toolbar
+                InventorySlot selectedSlot = InventoryManager.Instance.GetSelectedToolbeltSlot();
+                Item currentTool = (selectedSlot != null) ? selectedSlot.item : null;
 
-            // After interacting, the object might be destroyed, so we clear the selection text.
-            ClearSelection();
+                // Pass the current tool to the Interact method
+                currentInteractable.Interact(currentTool);
+
+                // After interacting, the object might be destroyed, so we clear the selection text.
+                ClearSelection();
+            }
         }
     }
      
