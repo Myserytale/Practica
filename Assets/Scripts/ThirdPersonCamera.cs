@@ -33,6 +33,7 @@ public class ThirdPersonCamera : MonoBehaviour
     void Start()
     {
         // Find player if not assigned
+        /*
         if (target == null)
         {
             GameObject player = GameObject.FindGameObjectWithTag("Player");
@@ -40,7 +41,7 @@ public class ThirdPersonCamera : MonoBehaviour
             {
                 target = player.transform;
             }
-        }
+        }*/
         
         // Set initial rotation
         if (target != null)
