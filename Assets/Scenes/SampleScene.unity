@@ -32284,9 +32284,13 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2002379286}
     m_Modifications:
+    - target: {fileID: 2707358866679988862, guid: 465cd116859875b45abf242d735d81c1, type: 3}
+      propertyPath: buildingRecipe
+      value: 
+      objectReference: {fileID: 11400000, guid: 67407fa5195497941965dcac9e1f1ab6, type: 2}
     - target: {fileID: 6452657415160612267, guid: 465cd116859875b45abf242d735d81c1, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -119.06903
+      value: -121.79
       objectReference: {fileID: 0}
     - target: {fileID: 6452657415160612267, guid: 465cd116859875b45abf242d735d81c1, type: 3}
       propertyPath: m_LocalPosition.y
@@ -36267,7 +36271,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   controller: {fileID: 0}
-  speed: 12
+  speed: 66
   gravity: -19.62
   jumpHeight: 3
   groundCheck: {fileID: 1549322201193841944}

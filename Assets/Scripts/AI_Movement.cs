@@ -23,6 +23,10 @@ public class AI_Movement : MonoBehaviour
     // --- Public Fields ---
     [Header("AI State")]
     public AIState currentState = AIState.Idle;
+    public AIState GetCurrentState()
+    {
+        return currentState;
+    }
     private AITask currentTask;
 
     [Header("NPC Connections")]
@@ -44,11 +48,25 @@ public class AI_Movement : MonoBehaviour
     private float taskTimer;
 
     void Start()
+{
+    // Initialize the agent reference first!
+    agent = GetComponent<NavMeshAgent>();
+    animator = GetComponent<Animator>();  // You should also initialize this here
+    
+    // Now check if it was found
+    if (agent != null)
     {
-        agent = GetComponent<NavMeshAgent>();
-        animator = GetComponent<Animator>();
-        for (int i = 0; i < BACKPACK_SIZE; i++) { npcBackpack.Add(new InventorySlot()); }
+        agent.isStopped = false;
+        agent.updatePosition = true;
+        agent.updateRotation = true;
     }
+    else
+    {
+        Debug.LogError("NavMeshAgent component missing!");
+    }
+    
+    for (int i = 0; i < BACKPACK_SIZE; i++) { npcBackpack.Add(new InventorySlot()); }
+}
 
     void Update()
     {
@@ -106,6 +124,7 @@ public class AI_Movement : MonoBehaviour
 
     public void AssignTask(AITask newTask)
     {
+        ResetAgent();
         currentTask = newTask;
         Debug.Log($"New task assigned: {newTask.taskType}");
 
@@ -122,10 +141,36 @@ public class AI_Movement : MonoBehaviour
             agent.SetDestination(newTask.targetPosition);
             currentState = AIState.MovingToTarget;
         }
+        // In the AssignTask method, modify this section:
         else if (newTask.taskType == AITaskType.Gather)
         {
-            // This logic remains mostly the same
-            if (newTask.resourceTarget == null) { currentState = AIState.Idle; return; }
+            if (newTask.resourceTarget == null)
+            {
+                // No resource target, just use the provided position or create a random one
+                Vector3 moveTarget = newTask.targetPosition;
+                if (moveTarget == Vector3.zero)
+                {
+                    // Generate a random position if none was provided
+                    Vector3 randomDirection = Random.insideUnitSphere * 10f;
+                    randomDirection.y = 0;
+                    moveTarget = transform.position + randomDirection;
+                }
+
+                NavMeshHit hit;
+                if (NavMesh.SamplePosition(moveTarget, out hit, 5f, NavMesh.AllAreas))
+                {
+                    agent.SetDestination(hit.position);
+                    currentState = AIState.MovingToTarget;
+                }
+                else
+                {
+                    Debug.LogWarning("Could not find valid NavMesh position for movement.");
+                    currentState = AIState.Idle;
+                }
+                return;
+            }
+
+            // Normal case with a resource target
             Item requiredTool = newTask.resourceTarget.requiredTool;
             if (requiredTool != null && heldItem != requiredTool)
             {
@@ -136,14 +181,33 @@ public class AI_Movement : MonoBehaviour
                 }
                 else
                 {
-                    currentState = AIState.WaitingForInput; // Can't gather, wait for new command
+                    currentState = AIState.WaitingForInput;
                     Debug.LogWarning($"Cannot gather, missing tool: {requiredTool.itemName}");
                 }
             }
             else
             {
-                agent.SetDestination(newTask.resourceTarget.transform.position);
-                currentState = AIState.MovingToTarget;
+                // Use the explicitly provided position if available, otherwise calculate one
+                Vector3 targetPos = newTask.targetPosition;
+                if (targetPos == Vector3.zero)
+                {
+                    // Calculate a position 2 units away from the resource
+                    Vector3 dirToResource = (newTask.resourceTarget.transform.position - transform.position).normalized;
+                    targetPos = newTask.resourceTarget.transform.position - dirToResource * 2f;
+                }
+
+                // Ensure the position is on the NavMesh
+                NavMeshHit hit;
+                if (NavMesh.SamplePosition(targetPos, out hit, 5f, NavMesh.AllAreas))
+                {
+                    agent.SetDestination(hit.position);
+                    currentState = AIState.MovingToTarget;
+                }
+                else
+                {
+                    Debug.LogWarning("Could not find valid NavMesh position near resource.");
+                    currentState = AIState.Idle;
+                }
             }
         }
     }
@@ -172,10 +236,10 @@ public class AI_Movement : MonoBehaviour
         }
         currentState = AIState.FinishedTask;
     }
-    
+
     // ... (HandleMovingToTarget, HandleMovingToChest, HandlePerformingTask are mostly unchanged)
     // ... (Helper methods are unchanged)
-// ... existing code from AI_Movement.cs ...
+    // ... existing code from AI_Movement.cs ...
     private void HandleMovingToTarget()
     {
         if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
@@ -202,8 +266,8 @@ public class AI_Movement : MonoBehaviour
                 }
                 else
                 {
-                     Debug.LogError($"Tool {toolToFetch.itemName} was not in chest upon arrival. Aborting task.");
-                     currentState = AIState.Idle;
+                    Debug.LogError($"Tool {toolToFetch.itemName} was not in chest upon arrival. Aborting task.");
+                    currentState = AIState.Idle;
                 }
             }
             else
@@ -232,7 +296,7 @@ public class AI_Movement : MonoBehaviour
                     AddItemToBackpack(currentTask.resourceTarget.itemToDrop, 1);
                     Debug.Log($"Gathered {currentTask.resourceTarget.itemToDrop.itemName}.");
                 }
-                
+
                 if (assignedChest != null)
                 {
                     Debug.Log("Moving to chest to deposit items.");
@@ -260,8 +324,26 @@ public class AI_Movement : MonoBehaviour
     }
     private Vector3 FindValidPlacement(Vector3 center)
     {
-        // Simple logic: find a spot right in front of the NPC
-        return center + transform.forward * 2f;
+        // Get a position in front of the NPC
+        Vector3 desiredPos = center + transform.forward * 2f;
+
+        // Check if position is on NavMesh
+        NavMeshHit hit;
+        if (NavMesh.SamplePosition(desiredPos, out hit, 5f, NavMesh.AllAreas))
+        {
+            Debug.Log($"Found valid NavMesh position at {hit.position}");
+            return hit.position;
+        }
+
+        // If not on NavMesh, try the current position
+        if (NavMesh.SamplePosition(center, out hit, 1f, NavMesh.AllAreas))
+        {
+            Debug.Log($"Using current position as placement point");
+            return hit.position;
+        }
+
+        Debug.LogError($"No valid NavMesh position found near {center}!");
+        return center; // Last resort
     }
     private void AddItemToBackpack(Item item, int quantity)
     {
@@ -296,4 +378,17 @@ public class AI_Movement : MonoBehaviour
         if (highest - lowest > maxGroundIncline) return false;
         return true;
     }
+
+    private void ResetAgent()
+{
+    if (agent == null) return;
+    
+    agent.ResetPath();
+    agent.isStopped = false;
+    agent.updatePosition = true;
+    agent.updateRotation = true;
+    
+    Debug.Log("Agent reset and ready for new path");
 }
+}
+

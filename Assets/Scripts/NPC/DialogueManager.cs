@@ -74,44 +74,52 @@ public class DialogueManager : MonoBehaviour
     }
 
     public void StartDialogue(NPCController npc)
-    {
-        currentNPC = npc;
-        IsDialogueActive = true;
-        dialoguePanel.SetActive(true);
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-        npcNameText.text = npc.npcName;
-        sentences.Clear();
-        continueButton.gameObject.SetActive(true);
-        continueButton.onClick.RemoveAllListeners();
-        continueButton.onClick.AddListener(DisplayNextSentence);
+{
+    currentNPC = npc;
+    IsDialogueActive = true;
+    dialoguePanel.SetActive(true);
+    Cursor.lockState = CursorLockMode.None;
+    Cursor.visible = true;
+    npcNameText.text = npc.npcName;
+    sentences.Clear();
+    continueButton.gameObject.SetActive(true);
+    continueButton.onClick.RemoveAllListeners();
+    continueButton.onClick.AddListener(DisplayNextSentence);
 
-        // --- DYNAMIC DIALOGUE LOGIC ---
-        AI_Movement npcAI = npc.GetComponent<AI_Movement>();
-        if (npcAI != null)
+    AI_Movement npcAI = npc.GetComponent<AI_Movement>();
+    if (npcAI != null)
+    {
+        // Stage 1: NPC has no chest.
+        if (npcAI.assignedChest == null)
         {
-            // Stage 1: NPC has no chest.
-            if (npcAI.assignedChest == null)
+            // Check if NPC is currently placing a chest
+            var state = npcAI.GetCurrentState();
+            if (state == AI_Movement.AIState.MovingToPlacement || state == AI_Movement.AIState.PlacingObject)
+            {
+                sentences.Enqueue("I'm placing the chest you gave me. Please wait!");
+                HideAllTaskButtons();
+            }
+            else
             {
                 sentences.Enqueue("I can't work without a place to store things.");
                 sentences.Enqueue("Could you give me a chest?");
                 SetupGiveChestButton(npcAI);
             }
-            // Stage 2: NPC has a chest, ready for commands.
-            else
-            {
-                sentences.Enqueue("I'm ready for my next task.");
-                SetupStandardButtons(npcAI);
-            }
         }
+        // Stage 2: NPC has a chest, ready for commands.
         else
         {
-            // Fallback for non-AI NPCs
-            foreach (string sentence in npc.dialogueLines) { sentences.Enqueue(sentence); }
+            sentences.Enqueue("I'm ready for my next task.");
+            SetupStandardButtons(npcAI);
         }
-
-        DisplayNextSentence();
     }
+    else
+    {
+        foreach (string sentence in npc.dialogueLines) { sentences.Enqueue(sentence); }
+    }
+
+    DisplayNextSentence();
+}
 
     private void SetupGiveChestButton(AI_Movement npcAI)
     {
@@ -206,7 +214,10 @@ public class DialogueManager : MonoBehaviour
     void EndDialogue()
     {
         IsDialogueActive = false;
-        currentNPC = null;
+        if (currentNPC!=null){
+            currentNPC.EndInteraction();
+            currentNPC = null;
+        }
         dialoguePanel.SetActive(false);
         HideAllTaskButtons();
 
@@ -237,28 +248,47 @@ public class DialogueManager : MonoBehaviour
     }
 
     private void OnGatherWoodClicked()
+{
+    if (currentNPC == null) return;
+    AI_Movement npcMovement = currentNPC.GetComponent<AI_Movement>();
+    if (npcMovement == null) return;
+
+    InteractableObject closestTree = FindClosestResource("Wood");
+    if (closestTree == null)
     {
-        if (currentNPC == null) return;
-        AI_Movement npcMovement = currentNPC.GetComponent<AI_Movement>();
-        if (npcMovement == null) return;
-
-        InteractableObject closestTree = FindClosestResource("Wood");
-        if (closestTree == null)
-        {
-            Debug.LogWarning("No trees found to gather from.");
-            EndDialogue();
-            return;
-        }
-
-        AI_Movement.AITask gatherTask = new AI_Movement.AITask
+        Debug.LogWarning("No trees found to gather from.");
+        
+        // Create a random movement destination for testing
+        Vector3 randomDirection = new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f)).normalized;
+        Vector3 testDestination = currentNPC.transform.position + randomDirection * 10f;
+        
+        Debug.Log($"No resources found. Moving to test position: {testDestination}");
+        
+        AI_Movement.AITask moveTask = new AI_Movement.AITask
         {
             taskType = AI_Movement.AITaskType.Gather,
-            resourceTarget = closestTree
+            targetPosition = testDestination
         };
-
-        npcMovement.AssignTask(gatherTask);
+        
+        npcMovement.AssignTask(moveTask);
         EndDialogue();
+        return;
     }
+
+    // Create a destination point that's 2 units away from the resource
+    Vector3 directionToTree = (closestTree.transform.position - currentNPC.transform.position).normalized;
+    Vector3 gatherPosition = closestTree.transform.position - directionToTree * 2f;
+
+    AI_Movement.AITask gatherTask = new AI_Movement.AITask
+    {
+        taskType = AI_Movement.AITaskType.Gather,
+        resourceTarget = closestTree,
+        targetPosition = gatherPosition  // Set an explicit position that's offset from the resource
+    };
+
+    npcMovement.AssignTask(gatherTask);
+    EndDialogue();
+}
 
     private ChestController FindClosestUnassignedChest(Vector3 fromPosition)
     {
