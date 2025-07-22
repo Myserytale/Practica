@@ -23,27 +23,27 @@ public class InteractableObject : MonoBehaviour
         return itemToDrop.itemName;
     }
 
-    public void Interact(Item toolUsed)
+    public virtual void Interact(Item toolUsed)
+{
+    if (isDepletable)
     {
-        if (isDepletable)
+        // It's a resource like a tree. Check if the correct tool is used.
+        if (requiredTool == null || requiredTool == toolUsed)
         {
-            // It's a resource like a tree. Check if the correct tool is used.
-            if (requiredTool == null || requiredTool == toolUsed)
-            {
-                TakeDamage();
-            }
-            else
-            {
-                // Wrong tool was used. Do nothing, or give feedback.
-                Debug.Log($"You need a {requiredTool.itemName} to harvest this.");
-            }
+            TakeDamage();
         }
         else
         {
-            // It's a simple pickup item.
-            PickupItem();
+            // Wrong tool was used. Do nothing, or give feedback.
+            Debug.Log($"You need a {requiredTool.itemName} to harvest this.");
         }
     }
+    else
+    {
+        // It's a simple pickup item.
+        PickupItem();
+    }
+}
 
 
     private void PickupItem()

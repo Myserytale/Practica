@@ -1,36 +1,53 @@
 using UnityEngine;
 using UnityEngine.AI;
-using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class AI_Movement : MonoBehaviour
 {
-    public enum AIState { Wandering, MovingToCommand, Building }
+    // --- Enums and Structs for Task Management ---
+    public enum AITaskType { Idle, PlaceObject, Build, Gather }
+    public enum AIState { Idle, WaitingForInput, MovingToPlacement, PlacingObject, MovingToTarget, PerformingTask, MovingToChest, FinishedTask }
 
-    [Header("AI Settings")]
-    public AIState currentState = AIState.Wandering;
-    public float wanderRadius = 10f;
-    public float wanderTimer = 5f;
-    public float commandTimeout = 15f;
+    [System.Serializable]
+    public struct AITask
+    {
+        public AITaskType taskType;
+        public Vector3 targetPosition;
+        public InteractableObject resourceTarget;
+        public CraftingRecipe buildingRecipe;
+        public GameObject objectToPlacePrefab; // New: For placing objects like chests
+    }
+
+    // --- Public Fields ---
+    [Header("AI State")]
+    public AIState currentState = AIState.Idle;
+    private AITask currentTask;
+
+    [Header("NPC Connections")]
+    public ChestController assignedChest;
+    public Item heldItem;
 
     [Header("Building")]
     public GameObject objectToBuildPrefab;
+    public CraftingRecipe buildingRecipe;
     public LayerMask obstructionLayers;
     public float maxGroundIncline = 5f;
     public int placementSearchRadius = 10;
-    public float spacing = 1f;
 
+    // --- Private Fields ---
     private NavMeshAgent agent;
     private Animator animator;
-    private float timer;
-    private float commandTimer;
-    private Vector3 commandPosition;
+    private List<InventorySlot> npcBackpack = new List<InventorySlot>();
+    private const int BACKPACK_SIZE = 5;
+    private float taskTimer;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
-        timer = wanderTimer;
+        for (int i = 0; i < BACKPACK_SIZE; i++) { npcBackpack.Add(new InventorySlot()); }
     }
 
     void Update()
@@ -39,160 +56,244 @@ public class AI_Movement : MonoBehaviour
 
         switch (currentState)
         {
-            case AIState.Wandering:
-                HandleWandering();
+            case AIState.Idle:
+            case AIState.WaitingForInput:
                 break;
-            case AIState.MovingToCommand:
-                HandleMovingToCommand();
+            case AIState.MovingToPlacement:
+                HandleMovingToPlacement();
+                break;
+            case AIState.PlacingObject:
+                HandlePlacingObject();
+                break;
+            case AIState.MovingToTarget:
+                HandleMovingToTarget();
+                break;
+            case AIState.PerformingTask:
+                HandlePerformingTask();
+                break;
+            case AIState.MovingToChest:
+                HandleMovingToChest();
+                break;
+            case AIState.FinishedTask:
+                Debug.Log("Task finished, returning to Idle.");
+                currentState = AIState.Idle;
                 break;
         }
     }
 
-    private void HandleWandering()
+    // --- Task Assignment & Checks ---
+
+    // New: Called by DialogueManager when player gives the NPC a chest item
+    public void StartChestPlacement(Item chestItem)
     {
-        timer += Time.deltaTime;
-        if (timer >= wanderTimer)
+        if (chestItem == null || chestItem.objectPrefab == null) return;
+
+        Vector3 placementPos = FindValidPlacement(transform.position);
+        AssignTask(new AITask
         {
-            Vector3 newPos = GetRandomNavMeshLocation(transform.position, wanderRadius);
-            agent.SetDestination(newPos);
-            timer = 0f;
-        }
+            taskType = AITaskType.PlaceObject,
+            objectToPlacePrefab = chestItem.objectPrefab,
+            targetPosition = placementPos
+        });
     }
 
-    private void HandleMovingToCommand()
+    // New: Called by DialogueManager to check if building is possible
+    public bool CanBuild()
     {
-        commandTimer += Time.deltaTime;
-
-        bool hasArrived = !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance;
-        bool pathInvalid = agent.pathStatus == NavMeshPathStatus.PathPartial || agent.pathStatus == NavMeshPathStatus.PathInvalid;
-        bool hasTimedOut = commandTimer >= commandTimeout;
-
-        if (hasArrived)
-        {
-            StartCoroutine(FindValidPlacementAndBuild());
-            currentState = AIState.Wandering;
-        }
-        else if (pathInvalid || hasTimedOut)
-        {
-            Debug.LogWarning($"{name}: Path failed or timed out. Returning to wandering.");
-            currentState = AIState.Wandering;
-        }
+        if (assignedChest == null) return false;
+        return assignedChest.HasRecipeIngredients(buildingRecipe);
     }
 
-    private IEnumerator FindValidPlacementAndBuild()
+    public void AssignTask(AITask newTask)
     {
-        if (!objectToBuildPrefab) yield break;
+        currentTask = newTask;
+        Debug.Log($"New task assigned: {newTask.taskType}");
 
-        Collider prefabCollider = objectToBuildPrefab.GetComponent<Collider>();
-        if (!prefabCollider)
+        if (newTask.taskType == AITaskType.PlaceObject)
         {
-            Debug.LogError("Missing Collider on objectToBuildPrefab.");
-            yield break;
+            agent.SetDestination(newTask.targetPosition);
+            currentState = AIState.MovingToPlacement;
         }
-
-        Vector3 buildPos = Vector3.zero;
-        bool found = false;
-
-        int searchPoints = placementSearchRadius * placementSearchRadius;
-        for (int r = 0; r < placementSearchRadius && !found; r++)
+        else if (newTask.taskType == AITaskType.Build)
         {
-            float angleStep = 360f / (r * 8 + 1);
-            for (int i = 0; i < r * 8 + 1; i++)
+            // Material check is now done in DialogueManager before calling this
+            assignedChest.ConsumeRecipeIngredients(newTask.buildingRecipe);
+            Debug.Log("Materials consumed from chest.");
+            agent.SetDestination(newTask.targetPosition);
+            currentState = AIState.MovingToTarget;
+        }
+        else if (newTask.taskType == AITaskType.Gather)
+        {
+            // This logic remains mostly the same
+            if (newTask.resourceTarget == null) { currentState = AIState.Idle; return; }
+            Item requiredTool = newTask.resourceTarget.requiredTool;
+            if (requiredTool != null && heldItem != requiredTool)
             {
-                float angle = i * angleStep;
-                Vector3 offset = Quaternion.Euler(0, angle, 0) * Vector3.forward * r * spacing;
-                Vector3 testPos = commandPosition + offset;
-
-                if (NavMesh.SamplePosition(testPos, out NavMeshHit hit, 1.5f, NavMesh.AllAreas))
+                if (assignedChest != null && assignedChest.HasItem(requiredTool, 1))
                 {
-                    if (IsPlacementValid(hit.position, out Vector3 groundPos))
-                    {
-                        buildPos = groundPos - new Vector3(0, 0.5f, 0); // Sink slightly
-                        found = true;
-                        break;
-                    }
+                    agent.SetDestination(assignedChest.transform.position);
+                    currentState = AIState.MovingToChest;
+                }
+                else
+                {
+                    currentState = AIState.WaitingForInput; // Can't gather, wait for new command
+                    Debug.LogWarning($"Cannot gather, missing tool: {requiredTool.itemName}");
                 }
             }
-            yield return null; // Avoid frame stutter on large spirals
+            else
+            {
+                agent.SetDestination(newTask.resourceTarget.transform.position);
+                currentState = AIState.MovingToTarget;
+            }
         }
+    }
 
-        if (found)
+    // --- State Handlers ---
+
+    private void HandleMovingToPlacement()
+    {
+        if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
         {
-            Debug.Log($"{name} found a build location at {buildPos}");
-            Instantiate(objectToBuildPrefab, buildPos, Quaternion.identity);
-            yield return new WaitForSeconds(1f); // Simulate build time
-            Debug.Log($"{name} completed building at {buildPos}");
+            Debug.Log("Arrived at placement location.");
+            currentState = AIState.PlacingObject;
+        }
+    }
+
+    private void HandlePlacingObject()
+    {
+        // Instantiate the chest, then assign it to self
+        GameObject placedObj = Instantiate(currentTask.objectToPlacePrefab, transform.position, Quaternion.identity);
+        ChestController newChest = placedObj.GetComponent<ChestController>();
+        if (newChest != null)
+        {
+            assignedChest = newChest;
+            newChest.assignedNPC = this;
+            Debug.Log("Placed and assigned new chest.");
+        }
+        currentState = AIState.FinishedTask;
+    }
+    
+    // ... (HandleMovingToTarget, HandleMovingToChest, HandlePerformingTask are mostly unchanged)
+    // ... (Helper methods are unchanged)
+// ... existing code from AI_Movement.cs ...
+    private void HandleMovingToTarget()
+    {
+        if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+        {
+            Debug.Log("Arrived at target.");
+            currentState = AIState.PerformingTask;
+            taskTimer = 0f;
+        }
+    }
+
+    private void HandleMovingToChest()
+    {
+        if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+        {
+            if (currentTask.taskType == AITaskType.Gather && heldItem != currentTask.resourceTarget.requiredTool)
+            {
+                Item toolToFetch = currentTask.resourceTarget.requiredTool;
+                if (assignedChest.RemoveItem(toolToFetch, 1))
+                {
+                    heldItem = toolToFetch;
+                    Debug.Log($"Fetched {toolToFetch.itemName} from chest.");
+                    agent.SetDestination(currentTask.resourceTarget.transform.position);
+                    currentState = AIState.MovingToTarget;
+                }
+                else
+                {
+                     Debug.LogError($"Tool {toolToFetch.itemName} was not in chest upon arrival. Aborting task.");
+                     currentState = AIState.Idle;
+                }
+            }
+            else
+            {
+                DepositItemsToChest();
+                currentState = AIState.FinishedTask;
+            }
+        }
+    }
+
+    private void HandlePerformingTask()
+    {
+        taskTimer += Time.deltaTime;
+        if (currentTask.taskType == AITaskType.Build)
+        {
+            FindValidPlacementAndBuild(currentTask.targetPosition);
+            currentState = AIState.FinishedTask;
+        }
+        else if (currentTask.taskType == AITaskType.Gather)
+        {
+            if (taskTimer >= 3f) // 3 seconds to gather
+            {
+                if (currentTask.resourceTarget != null)
+                {
+                    currentTask.resourceTarget.Interact(heldItem);
+                    AddItemToBackpack(currentTask.resourceTarget.itemToDrop, 1);
+                    Debug.Log($"Gathered {currentTask.resourceTarget.itemToDrop.itemName}.");
+                }
+                
+                if (assignedChest != null)
+                {
+                    Debug.Log("Moving to chest to deposit items.");
+                    agent.SetDestination(assignedChest.transform.position);
+                    currentState = AIState.MovingToChest;
+                }
+                else
+                {
+                    currentState = AIState.FinishedTask;
+                }
+            }
+        }
+    }
+    private void FindValidPlacementAndBuild(Vector3 position)
+    {
+        if (IsPlacementValid(position, out Vector3 groundPos))
+        {
+            Instantiate(objectToBuildPrefab, groundPos - new Vector3(0, 0.5f, 0), Quaternion.identity);
+            Debug.Log("Build complete!");
         }
         else
         {
-            Debug.LogWarning($"{name} couldn't find valid build spot.");
+            Debug.LogWarning("Could not find valid build spot at target.");
         }
-        commandTimer = 0f; // Reset command timer
-        currentState = AIState.Wandering; // Return to wandering state
     }
-
+    private Vector3 FindValidPlacement(Vector3 center)
+    {
+        // Simple logic: find a spot right in front of the NPC
+        return center + transform.forward * 2f;
+    }
+    private void AddItemToBackpack(Item item, int quantity)
+    {
+        foreach (var slot in npcBackpack) { if (slot.item == item) { slot.AddQuantity(quantity); return; } }
+        foreach (var slot in npcBackpack) { if (slot.item == null) { slot.item = item; slot.quantity = quantity; return; } }
+    }
+    private void DepositItemsToChest()
+    {
+        foreach (var slot in npcBackpack)
+        {
+            if (slot.item != null && slot.quantity > 0)
+            {
+                assignedChest.AddItem(slot.item, slot.quantity);
+                Debug.Log($"Deposited {slot.quantity} {slot.item.itemName} to chest.");
+                slot.item = null;
+                slot.quantity = 0;
+            }
+        }
+    }
     private bool IsPlacementValid(Vector3 position, out Vector3 groundPos)
     {
         groundPos = position;
-
-        if (!Physics.Raycast(position + Vector3.up * 20f, Vector3.down, out RaycastHit hit, 40f))
-            return false;
-
+        if (!Physics.Raycast(position + Vector3.up * 20f, Vector3.down, out RaycastHit hit, 40f)) return false;
         groundPos = hit.point;
         Collider col = objectToBuildPrefab.GetComponent<Collider>();
         if (!col) return false;
-
         Vector3 bounds = col.bounds.size / 2f;
-        if (Physics.CheckBox(groundPos + col.bounds.center, bounds, Quaternion.identity, obstructionLayers))
-            return false;
-
-        Vector3[] samplePoints = new Vector3[4]
-        {
-            groundPos + new Vector3(bounds.x, 0, bounds.z),
-            groundPos + new Vector3(-bounds.x, 0, bounds.z),
-            groundPos + new Vector3(bounds.x, 0, -bounds.z),
-            groundPos + new Vector3(-bounds.x, 0, -bounds.z)
-        };
-
+        if (Physics.CheckBox(groundPos + col.bounds.center, bounds, Quaternion.identity, obstructionLayers)) return false;
+        Vector3[] samplePoints = new Vector3[4] { groundPos + new Vector3(bounds.x, 0, bounds.z), groundPos + new Vector3(-bounds.x, 0, bounds.z), groundPos + new Vector3(bounds.x, 0, -bounds.z), groundPos + new Vector3(-bounds.x, 0, -bounds.z) };
         float highest = float.MinValue, lowest = float.MaxValue;
-        foreach (var p in samplePoints)
-        {
-            if (Physics.Raycast(p + Vector3.up * 10f, Vector3.down, out RaycastHit h, 20f))
-            {
-                highest = Mathf.Max(highest, h.point.y);
-                lowest = Mathf.Min(lowest, h.point.y);
-            }
-        }
-
+        foreach (var p in samplePoints) { if (Physics.Raycast(p + Vector3.up * 10f, Vector3.down, out RaycastHit h, 20f)) { highest = Mathf.Max(highest, h.point.y); lowest = Mathf.Min(lowest, h.point.y); } }
         if (highest - lowest > maxGroundIncline) return false;
-
         return true;
-    }
-
-    public void GiveBuildCommand(Vector3 position)
-    {
-        commandPosition = position;
-
-        if (NavMesh.SamplePosition(position, out NavMeshHit hit, 2f, NavMesh.AllAreas))
-        {
-            agent.SetDestination(hit.position);
-            commandTimer = 0f;
-            currentState = AIState.MovingToCommand;
-        }
-        else
-        {
-            Debug.LogWarning($"{name}: Cannot path to command position!");
-        }
-    }
-
-    private Vector3 GetRandomNavMeshLocation(Vector3 origin, float distance)
-    {
-        for (int i = 0; i < 10; i++)
-        {
-            Vector3 rand = origin + Random.insideUnitSphere * distance;
-            if (NavMesh.SamplePosition(rand, out NavMeshHit hit, distance, NavMesh.AllAreas))
-                return hit.position;
-        }
-        return origin;
     }
 }

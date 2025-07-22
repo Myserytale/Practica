@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7a34737b2c78c9438a788c834379e2d, type: 3}
   m_Name: CraftingTableItem
   m_EditorClassIdentifier: 
+  itemType: 2
   itemName: Crafting Table
   description: Item Description
   icon: {fileID: 0}
   maxStackSize: 64
+  objectPrefab: {fileID: 0}

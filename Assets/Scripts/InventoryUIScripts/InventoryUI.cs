@@ -4,6 +4,8 @@ using UnityEngine.UI;
 
 public class InventoryUI : MonoBehaviour
 {
+    public static InventoryUI Instance;
+
     [Header("UI References")]
     public GameObject inventoryPanel;
     public Transform slotsParent;
@@ -18,6 +20,11 @@ public class InventoryUI : MonoBehaviour
 
     private List<InventoryUISlot> inventorySlots = new List<InventoryUISlot>();
     private List<InventoryUISlot> toolBarSlots = new List<InventoryUISlot>();
+
+    public void Awake()
+    {
+        Instance = this;
+    }
 
     void Start()
     {
@@ -72,25 +79,53 @@ public class InventoryUI : MonoBehaviour
 
     void Update()
     {
-
+        // Do not process any input if a dialogue is active
         if (DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive)
         {
-            return; // Ignore input if dialogue is active
+            return; 
         }
-        if (Input.GetKeyDown(KeyCode.I))
+
+        // Only allow toggling with 'I' if the chest is NOT open
+        bool isChestOpen = ChestInventoryUI.Instance != null && ChestInventoryUI.Instance.IsChestOpen();
+        if (Input.GetKeyDown(KeyCode.I) && !isChestOpen)
         {
-            bool isActive = !inventoryPanel.activeSelf;
-            inventoryPanel.SetActive(isActive);
-            Cursor.lockState = isActive ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible = isActive;
-
-            if (isActive)
-            {
-                UpdateUI();
-            }
+            ToggleInventory();
         }
 
+        // Always allow toolbar selection
         HandleToolbarSelectionInput();
+    }
+
+    public void ToggleInventory()
+    {
+        bool isActive = !inventoryPanel.activeSelf;
+        inventoryPanel.SetActive(isActive);
+        UpdateCursorState(isActive);
+
+        if (isActive)
+        {
+            UpdateUI();
+        }
+    }
+
+    // Add these new public methods
+    public void OpenInventory()
+    {
+        inventoryPanel.SetActive(true);
+        UpdateCursorState(true);
+        UpdateUI();
+    }
+
+    public void CloseInventory()
+    {
+        inventoryPanel.SetActive(false);
+        UpdateCursorState(false);
+    }
+
+    private void UpdateCursorState(bool isUIOpen)
+    {
+        Cursor.lockState = isUIOpen ? CursorLockMode.None : CursorLockMode.Locked;
+        Cursor.visible = isUIOpen;
     }
 
     private void HandleToolbarSelectionInput()

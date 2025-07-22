@@ -9,6 +9,7 @@ public class SelectionManager : MonoBehaviour
     [Header("Detection Settings")]
     public float maxDetectionDistance = 10f;
     public LayerMask interactionLayerMask; // This MUST be set to ONLY Layer 7 in the Inspector
+    public LayerMask groundMask; // <-- Add this line
 
     [Header("Debug")]
     public bool showDebugRay = true;
@@ -17,7 +18,6 @@ public class SelectionManager : MonoBehaviour
     private InteractableObject currentInteractable;
     private Camera mainCamera;
     private NPCController currentNPC;
-    
 
     private void Start()
     {
@@ -39,7 +39,7 @@ public class SelectionManager : MonoBehaviour
         HandleInteractionInput();
     }
 
-       private void HandleDetection()
+    private void HandleDetection()
     {
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
@@ -56,9 +56,9 @@ public class SelectionManager : MonoBehaviour
             if (npc != null)
             {
                 currentNPC = npc;
-                currentInteractable = null; // Ensure we're not targeting an object
+                currentInteractable = null;
                 interaction_text.text = npc.GetInteractionText();
-                return; // Found an NPC, no need to check for objects
+                return;
             }
 
             // If no NPC, check for an interactable object
@@ -66,7 +66,7 @@ public class SelectionManager : MonoBehaviour
             if (interactable != null)
             {
                 currentInteractable = interactable;
-                currentNPC = null; // Ensure we're not targeting an NPC
+                currentNPC = null;
                 interaction_text.text = interactable.GetItemName();
             }
             else
@@ -80,30 +80,58 @@ public class SelectionManager : MonoBehaviour
         }
     }
 
-        private void HandleInteractionInput()
+   private void HandleInteractionInput()
+{
+    if (Input.GetKeyDown(KeyCode.E))
     {
-        if (Input.GetKeyDown(KeyCode.E))
+        if (currentNPC != null)
         {
-            if (currentNPC != null)
-            {
-                currentNPC.Interact();
-                ClearSelection();
-            }
-            else if (currentInteractable != null)
-            {
-                // Get the currently selected item from the toolbar
-                InventorySlot selectedSlot = InventoryManager.Instance.GetSelectedToolbeltSlot();
-                Item currentTool = (selectedSlot != null) ? selectedSlot.item : null;
+            currentNPC.Interact();
+            ClearSelection();
+        }
+        else if (currentInteractable != null)
+        {
+            InventorySlot selectedSlot = InventoryManager.Instance.GetSelectedToolbeltSlot();
+            Item currentTool = (selectedSlot != null) ? selectedSlot.item : null;
 
-                // Pass the current tool to the Interact method
+            // If it's a chest, open its inventory UI
+            ChestController chest = currentInteractable.GetComponent<ChestController>();
+            if (chest != null)
+            {
+                chest.Interact();
+            }
+            else
+            {
+                // Normal interact logic
                 currentInteractable.Interact(currentTool);
-
-                // After interacting, the object might be destroyed, so we clear the selection text.
-                ClearSelection();
             }
+            ClearSelection();
         }
     }
-     
+
+    if (Input.GetMouseButtonDown(1)) // Right mouse button
+    {
+        PlaceSelectedItem();
+    }
+}
+
+    private void PlaceSelectedItem()
+    {
+        InventorySlot selectedSlot = InventoryManager.Instance.GetSelectedToolbeltSlot();
+        if (selectedSlot == null || selectedSlot.item == null || selectedSlot.item.itemType != ItemType.Placeable)
+        {
+            return;
+        }
+
+        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit, maxDetectionDistance, groundMask))
+        {
+            Instantiate(selectedSlot.item.objectPrefab, hit.point, Quaternion.identity);
+            InventoryManager.Instance.RemoveItem(selectedSlot.item.itemName, 1);
+        }
+    }
 
     private void ClearSelection()
     {
