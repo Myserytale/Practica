@@ -4836,6 +4836,10 @@ MonoBehaviour:
     m_Bits: 960
   maxGroundIncline: 5
   placementSearchRadius: 10
+  pointsPerRing: 8
+  obstaclesDetected: 0
+  detectedObstacles: []
+  obstacleNotificationRange: 15
 --- !u!1 &281072773
 GameObject:
   m_ObjectHideFlags: 0
@@ -6491,7 +6495,6 @@ GameObject:
   - component: {fileID: 392501946}
   - component: {fileID: 392501951}
   - component: {fileID: 392501950}
-  - component: {fileID: 392501949}
   - component: {fileID: 392501948}
   - component: {fileID: 392501947}
   m_Layer: 5
@@ -6547,18 +6550,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &392501949
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 392501945}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 018019785c93da14a843ad5ac75958d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &392501950
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7410,7 +7401,6 @@ GameObject:
   - component: {fileID: 448491946}
   - component: {fileID: 448491951}
   - component: {fileID: 448491950}
-  - component: {fileID: 448491949}
   - component: {fileID: 448491948}
   - component: {fileID: 448491947}
   m_Layer: 5
@@ -7451,7 +7441,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d65a38a64049f04eb836376ba4dff5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  slotIndex: 0
+  slotIndex: 2
   isToolbeltSlot: 0
   owner: 1
 --- !u!225 &448491948
@@ -7466,18 +7456,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &448491949
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 448491945}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 018019785c93da14a843ad5ac75958d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &448491950
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7699,7 +7677,6 @@ GameObject:
   - component: {fileID: 455997667}
   - component: {fileID: 455997672}
   - component: {fileID: 455997671}
-  - component: {fileID: 455997670}
   - component: {fileID: 455997669}
   - component: {fileID: 455997668}
   m_Layer: 5
@@ -7740,7 +7717,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d65a38a64049f04eb836376ba4dff5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  slotIndex: 0
+  slotIndex: 9
   isToolbeltSlot: 0
   owner: 1
 --- !u!225 &455997669
@@ -7755,18 +7732,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &455997670
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 455997666}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 018019785c93da14a843ad5ac75958d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &455997671
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7822,7 +7787,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &456605310
 RectTransform:
   m_ObjectHideFlags: 0
@@ -8465,7 +8430,6 @@ GameObject:
   - component: {fileID: 509110942}
   - component: {fileID: 509110947}
   - component: {fileID: 509110946}
-  - component: {fileID: 509110945}
   - component: {fileID: 509110944}
   - component: {fileID: 509110943}
   m_Layer: 5
@@ -8506,7 +8470,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d65a38a64049f04eb836376ba4dff5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  slotIndex: 0
+  slotIndex: 6
   isToolbeltSlot: 0
   owner: 1
 --- !u!225 &509110944
@@ -8521,18 +8485,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &509110945
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 509110941}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 018019785c93da14a843ad5ac75958d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &509110946
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8754,7 +8706,6 @@ GameObject:
   - component: {fileID: 530318429}
   - component: {fileID: 530318435}
   - component: {fileID: 530318434}
-  - component: {fileID: 530318433}
   - component: {fileID: 530318432}
   - component: {fileID: 530318431}
   m_Layer: 5
@@ -8795,7 +8746,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d65a38a64049f04eb836376ba4dff5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  slotIndex: 0
+  slotIndex: 4
   isToolbeltSlot: 0
   owner: 1
 --- !u!225 &530318432
@@ -8810,18 +8761,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &530318433
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 530318428}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 018019785c93da14a843ad5ac75958d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &530318434
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9043,7 +8982,6 @@ GameObject:
   - component: {fileID: 567262770}
   - component: {fileID: 567262775}
   - component: {fileID: 567262774}
-  - component: {fileID: 567262773}
   - component: {fileID: 567262772}
   - component: {fileID: 567262771}
   m_Layer: 5
@@ -9084,7 +9022,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d65a38a64049f04eb836376ba4dff5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  slotIndex: 0
+  slotIndex: 12
   isToolbeltSlot: 0
   owner: 1
 --- !u!225 &567262772
@@ -9099,18 +9037,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &567262773
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 567262769}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 018019785c93da14a843ad5ac75958d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &567262774
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11274,9 +11200,37 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 3214560089242110264, guid: 43b17584a402de846ac81ed21669b002, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3214560089242110264, guid: 43b17584a402de846ac81ed21669b002, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -1.2612914
+      objectReference: {fileID: 0}
+    - target: {fileID: 3765972373798882371, guid: 43b17584a402de846ac81ed21669b002, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3765972373798882371, guid: 43b17584a402de846ac81ed21669b002, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -1.7888311
+      objectReference: {fileID: 0}
+    - target: {fileID: 5399968292330706741, guid: 43b17584a402de846ac81ed21669b002, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -2.15
+      objectReference: {fileID: 0}
     - target: {fileID: 5413072201370424694, guid: 43b17584a402de846ac81ed21669b002, type: 3}
       propertyPath: m_Name
       value: Trees
+      objectReference: {fileID: 0}
+    - target: {fileID: 6042447443169110247, guid: 43b17584a402de846ac81ed21669b002, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6042447443169110247, guid: 43b17584a402de846ac81ed21669b002, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -1.7888311
       objectReference: {fileID: 0}
     - target: {fileID: 8224879078820139275, guid: 43b17584a402de846ac81ed21669b002, type: 3}
       propertyPath: m_LocalPosition.x
@@ -12257,7 +12211,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7359d91b7b20905428be08f802af2538, type: 2}
   - {fileID: 11400000, guid: 2b716f9176fdb2945b3b74058f75dfaf, type: 2}
   inventorySize: 15
-  toolBeltSize: 5
+  toolBeltSize: 8
 --- !u!114 &766515803
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12821,6 +12775,10 @@ MonoBehaviour:
     m_Bits: 896
   maxGroundIncline: 7
   placementSearchRadius: 15
+  pointsPerRing: 8
+  obstaclesDetected: 0
+  detectedObstacles: []
+  obstacleNotificationRange: 15
 --- !u!195 &797354084
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -13129,7 +13087,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -131.9, y: 1.4}
+  m_AnchoredPosition: {x: -156.8, y: -35.2}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &801308463
@@ -20515,7 +20473,6 @@ GameObject:
   - component: {fileID: 1190946201}
   - component: {fileID: 1190946206}
   - component: {fileID: 1190946205}
-  - component: {fileID: 1190946204}
   - component: {fileID: 1190946203}
   - component: {fileID: 1190946202}
   m_Layer: 5
@@ -20556,7 +20513,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d65a38a64049f04eb836376ba4dff5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  slotIndex: 0
+  slotIndex: 10
   isToolbeltSlot: 0
   owner: 1
 --- !u!225 &1190946203
@@ -20571,18 +20528,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &1190946204
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1190946200}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 018019785c93da14a843ad5ac75958d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1190946205
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24077,7 +24022,6 @@ GameObject:
   - component: {fileID: 1411776103}
   - component: {fileID: 1411776108}
   - component: {fileID: 1411776107}
-  - component: {fileID: 1411776106}
   - component: {fileID: 1411776105}
   - component: {fileID: 1411776104}
   m_Layer: 5
@@ -24118,7 +24062,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d65a38a64049f04eb836376ba4dff5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  slotIndex: 0
+  slotIndex: 1
   isToolbeltSlot: 0
   owner: 1
 --- !u!225 &1411776105
@@ -24133,18 +24077,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &1411776106
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1411776102}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 018019785c93da14a843ad5ac75958d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1411776107
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24882,7 +24814,6 @@ GameObject:
   - component: {fileID: 1439803395}
   - component: {fileID: 1439803400}
   - component: {fileID: 1439803399}
-  - component: {fileID: 1439803398}
   - component: {fileID: 1439803397}
   - component: {fileID: 1439803396}
   m_Layer: 5
@@ -24923,7 +24854,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d65a38a64049f04eb836376ba4dff5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  slotIndex: 0
+  slotIndex: 13
   isToolbeltSlot: 0
   owner: 1
 --- !u!225 &1439803397
@@ -24938,18 +24869,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &1439803398
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1439803394}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 018019785c93da14a843ad5ac75958d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1439803399
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25116,7 +25035,6 @@ GameObject:
   - component: {fileID: 1440929268}
   - component: {fileID: 1440929273}
   - component: {fileID: 1440929272}
-  - component: {fileID: 1440929271}
   - component: {fileID: 1440929270}
   - component: {fileID: 1440929269}
   m_Layer: 5
@@ -25157,7 +25075,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d65a38a64049f04eb836376ba4dff5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  slotIndex: 0
+  slotIndex: 8
   isToolbeltSlot: 0
   owner: 1
 --- !u!225 &1440929270
@@ -25172,18 +25090,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &1440929271
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1440929267}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 018019785c93da14a843ad5ac75958d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1440929272
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26410,7 +26316,6 @@ GameObject:
   - component: {fileID: 1517950896}
   - component: {fileID: 1517950901}
   - component: {fileID: 1517950900}
-  - component: {fileID: 1517950899}
   - component: {fileID: 1517950898}
   - component: {fileID: 1517950897}
   m_Layer: 5
@@ -26451,7 +26356,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d65a38a64049f04eb836376ba4dff5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  slotIndex: 0
+  slotIndex: 3
   isToolbeltSlot: 0
   owner: 1
 --- !u!225 &1517950898
@@ -26466,18 +26371,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &1517950899
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1517950895}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 018019785c93da14a843ad5ac75958d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1517950900
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27336,7 +27229,6 @@ GameObject:
   - component: {fileID: 1605330631}
   - component: {fileID: 1605330636}
   - component: {fileID: 1605330635}
-  - component: {fileID: 1605330634}
   - component: {fileID: 1605330633}
   - component: {fileID: 1605330632}
   m_Layer: 5
@@ -27377,7 +27269,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d65a38a64049f04eb836376ba4dff5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  slotIndex: 0
+  slotIndex: 7
   isToolbeltSlot: 0
   owner: 1
 --- !u!225 &1605330633
@@ -27392,18 +27284,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &1605330634
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1605330630}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 018019785c93da14a843ad5ac75958d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1605330635
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27974,7 +27854,6 @@ GameObject:
   - component: {fileID: 1656857304}
   - component: {fileID: 1656857309}
   - component: {fileID: 1656857308}
-  - component: {fileID: 1656857307}
   - component: {fileID: 1656857306}
   - component: {fileID: 1656857305}
   m_Layer: 5
@@ -28015,7 +27894,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d65a38a64049f04eb836376ba4dff5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  slotIndex: 0
+  slotIndex: 11
   isToolbeltSlot: 0
   owner: 1
 --- !u!225 &1656857306
@@ -28030,18 +27909,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &1656857307
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1656857303}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 018019785c93da14a843ad5ac75958d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1656857308
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29037,7 +28904,6 @@ GameObject:
   - component: {fileID: 1710587532}
   - component: {fileID: 1710587537}
   - component: {fileID: 1710587536}
-  - component: {fileID: 1710587535}
   - component: {fileID: 1710587534}
   - component: {fileID: 1710587533}
   m_Layer: 5
@@ -29078,7 +28944,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d65a38a64049f04eb836376ba4dff5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  slotIndex: 0
+  slotIndex: 5
   isToolbeltSlot: 0
   owner: 1
 --- !u!225 &1710587534
@@ -29093,18 +28959,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &1710587535
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1710587531}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 018019785c93da14a843ad5ac75958d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1710587536
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -31826,7 +31680,6 @@ GameObject:
   - component: {fileID: 1889851270}
   - component: {fileID: 1889851276}
   - component: {fileID: 1889851275}
-  - component: {fileID: 1889851274}
   - component: {fileID: 1889851273}
   - component: {fileID: 1889851272}
   m_Layer: 5
@@ -31867,7 +31720,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d65a38a64049f04eb836376ba4dff5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  slotIndex: 0
+  slotIndex: 14
   isToolbeltSlot: 0
   owner: 1
 --- !u!225 &1889851273
@@ -31882,18 +31735,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &1889851274
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1889851269}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 018019785c93da14a843ad5ac75958d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1889851275
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -32285,20 +32126,40 @@ PrefabInstance:
     m_TransformParent: {fileID: 2002379286}
     m_Modifications:
     - target: {fileID: 2707358866679988862, guid: 465cd116859875b45abf242d735d81c1, type: 3}
+      propertyPath: pointsPerRing
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 2707358866679988862, guid: 465cd116859875b45abf242d735d81c1, type: 3}
       propertyPath: buildingRecipe
       value: 
       objectReference: {fileID: 11400000, guid: 67407fa5195497941965dcac9e1f1ab6, type: 2}
+    - target: {fileID: 2707358866679988862, guid: 465cd116859875b45abf242d735d81c1, type: 3}
+      propertyPath: maxGroundIncline
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 2707358866679988862, guid: 465cd116859875b45abf242d735d81c1, type: 3}
+      propertyPath: placementSearchRadius
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 2707358866679988862, guid: 465cd116859875b45abf242d735d81c1, type: 3}
+      propertyPath: obstacleNotificationRange
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 3736564253621263392, guid: 465cd116859875b45abf242d735d81c1, type: 3}
+      propertyPath: m_Speed
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 6452657415160612267, guid: 465cd116859875b45abf242d735d81c1, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -121.79
+      value: 69
       objectReference: {fileID: 0}
     - target: {fileID: 6452657415160612267, guid: 465cd116859875b45abf242d735d81c1, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -1.18526
+      value: -1
       objectReference: {fileID: 0}
     - target: {fileID: 6452657415160612267, guid: 465cd116859875b45abf242d735d81c1, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -56.580444
+      value: -270
       objectReference: {fileID: 0}
     - target: {fileID: 6452657415160612267, guid: 465cd116859875b45abf242d735d81c1, type: 3}
       propertyPath: m_LocalRotation.w

@@ -27,8 +27,8 @@ public class InventoryManager : MonoBehaviour
     public List<Item> itemDatabase;
 
     [Header("Inventory Settings")]
-    public int inventorySize = 20;
-    public int toolBeltSize = 5;
+    public int inventorySize = 15;
+    public int toolBeltSize = 8;
 
     private List<InventorySlot> inventory;
     private List<InventorySlot> toolbelt;
@@ -273,6 +273,83 @@ public class InventoryManager : MonoBehaviour
         total += inventory.Where(s => s.item == item).Sum(s => s.quantity);
         total += toolbelt.Where(s => s.item == item).Sum(s => s.quantity);
         return total;
+    }
+
+        public void TransferItem(InventoryUISlot sourceUISlot, InventoryUISlot destUISlot)
+    {
+        if (sourceUISlot == null || destUISlot == null) return;
+
+        InventorySlot sourceDataSlot = GetDataSlotFromUI(sourceUISlot);
+        InventorySlot destDataSlot = GetDataSlotFromUI(destUISlot);
+
+        if (sourceDataSlot == null || destDataSlot == null || sourceDataSlot.item == null)
+        {
+            return; // Trying to drag an empty slot
+        }
+
+        // Case 1: Destination is empty. Move the whole stack.
+        if (destDataSlot.item == null)
+        {
+            destDataSlot.item = sourceDataSlot.item;
+            destDataSlot.quantity = sourceDataSlot.quantity;
+            sourceDataSlot.Clear();
+        }
+        // Case 2: Items are the same. Try to stack.
+        else if (destDataSlot.item == sourceDataSlot.item)
+        {
+            int spaceInDest = destDataSlot.item.maxStackSize - destDataSlot.quantity;
+            if (spaceInDest > 0)
+            {
+                int amountToMove = Mathf.Min(spaceInDest, sourceDataSlot.quantity);
+                destDataSlot.quantity += amountToMove;
+                sourceDataSlot.quantity -= amountToMove;
+
+                if (sourceDataSlot.quantity <= 0)
+                {
+                    sourceDataSlot.Clear();
+                }
+            }
+            else // Destination is full, so swap instead.
+            {
+                SwapSlots(sourceDataSlot, destDataSlot);
+            }
+        }
+        // Case 3: Items are different. Swap them.
+        else
+        {
+            SwapSlots(sourceDataSlot, destDataSlot);
+        }
+
+        // Notify all UI elements to update themselves
+        onInventoryChanged?.Invoke();
+    }
+
+     private void SwapSlots(InventorySlot slotA, InventorySlot slotB)
+    {
+        Item tempItem = slotA.item;
+        int tempQuantity = slotA.quantity;
+
+        slotA.item = slotB.item;
+        slotA.quantity = slotB.quantity;
+
+        slotB.item = tempItem;
+        slotB.quantity = tempQuantity;
+    }
+    private InventorySlot GetDataSlotFromUI(InventoryUISlot uiSlot)
+    {
+        if (uiSlot.owner == InventoryOwner.Player)
+        {
+            return uiSlot.isToolbeltSlot ? GetToolSlot(uiSlot.slotIndex) : GetSlot(uiSlot.slotIndex);
+        }
+        else // It's a chest slot
+        {
+            ChestController currentChest = ChestInventoryUI.Instance.GetCurrentChest();
+            if (currentChest != null && uiSlot.slotIndex < currentChest.chestInventory.Count)
+            {
+                return currentChest.chestInventory[uiSlot.slotIndex];
+            }
+        }
+        return null;
     }
 
     public InventorySlot GetSlot(int index) => (index < inventory.Count) ? inventory[index] : null;

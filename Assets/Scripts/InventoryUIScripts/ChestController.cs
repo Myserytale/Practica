@@ -30,27 +30,62 @@ public class ChestController : InteractableObject
     ChestInventoryUI.Instance.OpenChest(this);
 }
 
-    // Chest-specific inventory logic below
     public bool AddItem(Item item, int quantity)
     {
+        if (item == null || quantity <= 0) return false;
+
+        int remainingAmount = quantity;
+
+        // 1. Try to stack with existing items
         foreach (var slot in chestInventory)
         {
             if (slot.item == item && slot.quantity < item.maxStackSize)
             {
-                slot.AddQuantity(quantity);
-                return true;
+                int spaceInSlot = item.maxStackSize - slot.quantity;
+                int amountToAdd = Mathf.Min(remainingAmount, spaceInSlot);
+                
+                slot.quantity += amountToAdd;
+                remainingAmount -= amountToAdd;
+
+                if (remainingAmount <= 0)
+                {
+                    ChestInventoryUI.Instance.UpdateChestUI();
+                    return true;
+                }
             }
         }
-        foreach (var slot in chestInventory)
+
+        // 2. Find empty slots for the rest
+        if (remainingAmount > 0)
         {
-            if (slot.item == null)
+            foreach (var slot in chestInventory)
             {
-                slot.item = item;
-                slot.quantity = quantity;
-                return true;
+                if (slot.item == null)
+                {
+                    int amountToAdd = Mathf.Min(remainingAmount, item.maxStackSize);
+                    
+                    slot.item = item;
+                    slot.quantity = amountToAdd;
+                    remainingAmount -= amountToAdd;
+
+                    if (remainingAmount <= 0)
+                    {
+                        ChestInventoryUI.Instance.UpdateChestUI();
+                        return true;
+                    }
+                }
             }
         }
-        return false; // Full
+
+        // If items still remain, the chest is full
+        if (remainingAmount < quantity)
+        {
+            Debug.LogWarning($"Chest is full. Could not add {remainingAmount} of {item.itemName}.");
+            ChestInventoryUI.Instance.UpdateChestUI();
+            return true; // Return true because we added *some* items
+        }
+
+        return false; // This is reached if the chest was completely full initially
     }
 
     public bool RemoveItem(Item item, int quantity)
