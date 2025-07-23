@@ -5,7 +5,8 @@ public class NewPlayerMovement : MonoBehaviour
 {
 [Header("Movement")]
     public CharacterController controller;
-    public float speed = 12f;
+    public float speed = 2.5f;
+    public Animator animator; // Optional: for animations
     public float gravity = -9.81f * 2;
     public float jumpHeight = 3f;
  
@@ -122,14 +123,23 @@ public class NewPlayerMovement : MonoBehaviour
         }
     }
     
-    void HandleMovement()
-    {
-        // Calculate movement direction
+   void HandleMovement()
+{
+    Debug.Log("Handle called");
+    // Calculate movement direction
         Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
-        
-        // Apply movement
-        controller.Move(move * speed * Time.deltaTime);
+
+    // Apply movement
+    controller.Move(move * speed * Time.deltaTime);
+
+    // Set animator Speed parameter
+    if (animator != null)
+    {
+        float moveSpeed = new Vector2(moveInput.x, moveInput.y).magnitude;
+        animator.SetFloat("Speed", moveSpeed);
+        Debug.Log("Animator Speed: " + moveSpeed);
     }
+}
     
     void HandleJumping()
     {
