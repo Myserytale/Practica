@@ -252,6 +252,7 @@ GameObject:
   - component: {fileID: 766707866866323070}
   - component: {fileID: 5750699876362987039}
   - component: {fileID: 4173747488163375879}
+  - component: {fileID: 2088051205716503778}
   m_Layer: 5
   m_Name: EnemyHealthBar
   m_TagString: Untagged
@@ -268,7 +269,7 @@ RectTransform:
   m_GameObject: {fileID: 4385446724837169509}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.05, y: 0.05, z: 0.05}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3190323585820997881}
@@ -277,7 +278,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 470, y: 252}
-  m_SizeDelta: {x: 940, y: 504}
+  m_SizeDelta: {x: 100, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &766707866866323070
 Canvas:
@@ -324,7 +325,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 1
+  m_PresetInfoIsWorld: 0
 --- !u!114 &4173747488163375879
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -342,6 +343,27 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &2088051205716503778
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4385446724837169509}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22d4e281858d03140aaea78fe36f4827, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  healthSlider: {fileID: 8938920103730869637}
+  fillImage: {fileID: 8888398410380445373}
+  heightOffset: 5
+  alwaysFaceCamera: 1
+  hideWhenFull: 0
+  fullHealthColor: {r: 0, g: 1, b: 0, a: 1}
+  halfHealthColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  lowHealthColor: {r: 1, g: 0, b: 0, a: 1}
+  lowHealthThreshold: 0.3
 --- !u!1 &5535676873272912730
 GameObject:
   m_ObjectHideFlags: 0

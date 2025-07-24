@@ -47,48 +47,54 @@ public class PlayerCombat : MonoBehaviour
     }
     
     void TryAttack()
+{
+    if (Time.time - lastAttackTime < attackCooldown) return;
+    
+    Vector3 screenCenter = new Vector3(Screen.width / 2, Screen.height / 2, 0);
+    Ray ray = playerCamera.ScreenPointToRay(screenCenter);
+    RaycastHit hit;
+    
+    Debug.DrawRay(ray.origin, ray.direction * attackRange, Color.red, 0.5f);
+    
+    // Cast against all layers, then filter
+    if (Physics.Raycast(ray, out hit, attackRange))
     {
-        if (Time.time - lastAttackTime < attackCooldown) return;
+        Debug.Log($"Player attack hit: {hit.collider.name}, Tag: {hit.collider.tag}, Layer: {hit.collider.gameObject.layer}");
         
-        // Get center of screen for raycast
-        Vector3 screenCenter = new Vector3(Screen.width / 2, Screen.height / 2, 0);
-        Ray ray = playerCamera.ScreenPointToRay(screenCenter);
-        RaycastHit hit;
+        // Check if we hit an enemy (Layer 8 or Enemy tag)
+        bool hitEnemy = hit.collider.gameObject.layer == 8 || hit.collider.CompareTag("Enemy");
         
-        Debug.DrawRay(ray.origin, ray.direction * attackRange, Color.red, 0.5f);
-        
-        if (Physics.Raycast(ray, out hit, attackRange, enemyLayer))
+        if (hitEnemy)
         {
-            // Check if we hit an enemy
-            EnemyAI enemy = hit.collider.GetComponent<EnemyAI>();
             HealthSystem enemyHealth = hit.collider.GetComponent<HealthSystem>();
-            
             if (enemyHealth != null)
             {
                 float finalDamage = CalculateDamage();
                 enemyHealth.TakeDamage(finalDamage, gameObject);
                 
-                // Visual feedback
-                ShowHitEffect(hit.point);
-                
-                // Audio feedback (if you have audio)
-                // AudioSource.PlayClipAtPoint(hitSound, hit.point);
-                
-                Debug.Log($"Player hit {hit.collider.name} for {finalDamage} damage!");
+                Debug.Log($"Player hit enemy {hit.collider.name} for {finalDamage} damage!");
                 lastAttackTime = Time.time;
                 
-                // Trigger attack animation
                 if (animator != null)
                 {
                     animator.SetTrigger("Attack");
                 }
             }
+            else
+            {
+                Debug.LogWarning($"Enemy {hit.collider.name} has no HealthSystem component!");
+            }
         }
         else
         {
-            Debug.Log("Attack missed - no enemy in range");
+            Debug.Log($"Hit {hit.collider.name} but it's not an enemy");
         }
     }
+    else
+    {
+        Debug.Log("Player attack missed - no object in range");
+    }
+}
     
     void TryMeleeAttack()
     {

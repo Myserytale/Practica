@@ -37,52 +37,90 @@ private bool isReturningToStart = false;
     private float patrolWaitTimer;
 
     void Start()
+{
+    agent = GetComponent<NavMeshAgent>();
+    animator = GetComponent<Animator>();
+    healthSystem = GetComponent<HealthSystem>();
+
+    startPosition = transform.position;
+    agent.speed = moveSpeed;
+    agent.stoppingDistance = 0.1f;
+
+    // Existing NavMesh setup...
+    NavMeshHit hit;
+    if (NavMesh.SamplePosition(transform.position, out hit, 5f, NavMesh.AllAreas))
     {
-        agent = GetComponent<NavMeshAgent>();
-        animator = GetComponent<Animator>();
-        healthSystem = GetComponent<HealthSystem>();
-
-        startPosition = transform.position;
-        agent.speed = moveSpeed;
-
-        agent.stoppingDistance = 0.1f;
-
-        // IMPORTANT: Ensure enemy starts on NavMesh
-        NavMeshHit hit;
-        if (NavMesh.SamplePosition(transform.position, out hit, 5f, NavMesh.AllAreas))
-        {
-            transform.position = hit.position;
-            Debug.Log($"Enemy {gameObject.name} positioned on NavMesh");
-        }
-        else
-        {
-            Debug.LogError($"Enemy {gameObject.name} cannot be placed on NavMesh! Check NavMesh baking.");
-        }
-
-        // Find player
-        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-        if (playerObj != null)
-        {
-            player = playerObj.transform;
-            Debug.Log($"Enemy found player: {player.name}");
-        }
-        else
-        {
-            Debug.LogError("Enemy cannot find player! Make sure player has 'Player' tag.");
-        }
-
-        // Set up health system events
-        if (healthSystem != null)
-        {
-            healthSystem.OnDeath += OnDeath;
-        }
-
-        SetNewPatrolTarget();
+        transform.position = hit.position;
+        Debug.Log($"Enemy {gameObject.name} positioned on NavMesh");
     }
 
-    void Update()
+    // Find player
+    GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+    if (playerObj != null)
     {
-        if (currentState == EnemyState.Dead) return;
+        player = playerObj.transform;
+    }
+
+    // Set up health system events
+    if (healthSystem != null)
+    {
+        healthSystem.OnDeath += OnDeath;
+    }
+
+    // CREATE HEALTH BAR
+    CreateHealthBar();
+
+    SetNewPatrolTarget();
+}
+
+[Header("UI")]
+public GameObject healthBarPrefab; // Assign in Inspector
+
+void CreateHealthBar()
+{
+    if (healthBarPrefab == null)
+    {
+        Debug.LogWarning($"Health bar prefab not assigned on {gameObject.name}!");
+        return;
+    }
+    
+    if (healthSystem == null)
+    {
+        Debug.LogWarning($"No HealthSystem found on {gameObject.name}!");
+        return;
+    }
+    
+    Debug.Log($"Creating health bar for {gameObject.name}...");
+    
+    try
+    {
+        GameObject healthBarInstance = Instantiate(healthBarPrefab);
+        
+        // Position it above the enemy
+        healthBarInstance.transform.position = transform.position + Vector3.up * 2.5f;
+        
+        EnemyHealthBar healthBar = healthBarInstance.GetComponent<EnemyHealthBar>();
+        
+        if (healthBar != null)
+        {
+            healthBar.Initialize(transform, healthSystem);
+            Debug.Log($"Health bar successfully created for {gameObject.name}!");
+        }
+        else
+        {
+            Debug.LogError($"Health bar prefab is missing EnemyHealthBar component!");
+            Destroy(healthBarInstance);
+        }
+    }
+    catch (System.Exception e)
+    {
+        Debug.LogError($"Error creating health bar for {gameObject.name}: {e.Message}");
+    }
+}
+
+void Update()
+{
+    if (currentState == EnemyState.Dead) return;
 
         // Update animator
         if (animator != null)
@@ -131,6 +169,11 @@ private bool isReturningToStart = false;
             if (Physics.Raycast(rayStart, directionToPlayer, out hit, detectionRange))
             {
                 Debug.Log($"Raycast hit: {hit.collider.name} with tag: {hit.collider.tag}");
+
+                bool hitPlayer = hit.collider.CompareTag("Player") || 
+                       hit.collider.gameObject.layer == 3 ||  // Player layer
+                       hit.collider.gameObject.layer == 9;    // PlayerModel layer
+
 
                 if (hit.collider.CompareTag("Player"))
                 {
@@ -278,22 +321,74 @@ void StartReturnToStart()
     }
 
     void Attack()
+{
+    Debug.Log($"{gameObject.name} attacks player!");
+
+    // Trigger attack animation
+    if (animator != null)
     {
-        Debug.Log($"{gameObject.name} attacks player!");
+        animator.SetTrigger("Attack");
+    }
 
-        // Trigger attack animation
-        if (animator != null)
-        {
-            animator.SetTrigger("Attack");
-        }
+    // Enhanced debug for player health detection
+    Debug.Log($"=== ENEMY ATTACK DEBUG ===");
+    Debug.Log($"Player transform: {player?.name}");
+    Debug.Log($"Player position: {player?.position}");
+    Debug.Log($"Player tag: {player?.tag}");
+    Debug.Log($"Player layer: {player?.gameObject.layer}");
 
-        // Deal damage to player
-        HealthSystem playerHealth = player.GetComponent<HealthSystem>();
-        if (playerHealth != null)
+    // Try multiple ways to find HealthSystem
+    HealthSystem playerHealth = null;
+    
+    // Method 1: Direct component
+    playerHealth = player.GetComponent<HealthSystem>();
+    Debug.Log($"Direct GetComponent result: {playerHealth != null}");
+    
+    // Method 2: Check all components
+    var allComponents = player.GetComponents<Component>();
+    Debug.Log($"All components on player: {string.Join(", ", System.Array.ConvertAll(allComponents, c => c.GetType().Name))}");
+    
+    // Method 3: Check children
+    if (playerHealth == null)
+    {
+        playerHealth = player.GetComponentInChildren<HealthSystem>();
+        Debug.Log($"GetComponentInChildren result: {playerHealth != null}");
+    }
+    
+    // Method 4: Check parent
+    if (playerHealth == null)
+    {
+        playerHealth = player.GetComponentInParent<HealthSystem>();
+        Debug.Log($"GetComponentInParent result: {playerHealth != null}");
+    }
+
+    if (playerHealth != null)
+    {
+        Debug.Log($"Found HealthSystem! Current health: {playerHealth.currentHealth}/{playerHealth.maxHealth}");
+        playerHealth.TakeDamage(damage, gameObject);
+        Debug.Log($"Damage dealt! New health: {playerHealth.currentHealth}/{playerHealth.maxHealth}");
+    }
+    else
+    {
+        Debug.LogError("NO HEALTHSYSTEM FOUND ON PLAYER!");
+        
+        // Last resort: Find by tag
+        GameObject[] playerObjects = GameObject.FindGameObjectsWithTag("Player");
+        Debug.Log($"Found {playerObjects.Length} objects with Player tag:");
+        
+        foreach (var obj in playerObjects)
         {
-            playerHealth.TakeDamage(damage, gameObject);
+            var health = obj.GetComponent<HealthSystem>();
+            Debug.Log($"- {obj.name}: Has HealthSystem = {health != null}");
+            if (health != null)
+            {
+                health.TakeDamage(damage, gameObject);
+                Debug.Log("Successfully dealt damage via tag search!");
+                return;
+            }
         }
     }
+}
 
     void SetNewPatrolTarget()
 {

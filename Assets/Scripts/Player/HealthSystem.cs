@@ -7,6 +7,7 @@ public class HealthSystem : MonoBehaviour
     [Header("Health Settings")]
     public float maxHealth = 100f;
     public float currentHealth;
+    
     public bool canRegenerate = false;
     public float regenRate = 1f; // Health per second
     public float regenDelay = 3f; // Delay after taking damage before regen starts
