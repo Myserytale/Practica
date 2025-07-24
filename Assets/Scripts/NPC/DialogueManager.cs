@@ -74,52 +74,58 @@ public class DialogueManager : MonoBehaviour
     }
 
     public void StartDialogue(NPCController npc)
-{
-    currentNPC = npc;
-    IsDialogueActive = true;
-    dialoguePanel.SetActive(true);
-    Cursor.lockState = CursorLockMode.None;
-    Cursor.visible = true;
-    npcNameText.text = npc.npcName;
-    sentences.Clear();
-    continueButton.gameObject.SetActive(true);
-    continueButton.onClick.RemoveAllListeners();
-    continueButton.onClick.AddListener(DisplayNextSentence);
-
-    AI_Movement npcAI = npc.GetComponent<AI_Movement>();
-    if (npcAI != null)
     {
-        // Stage 1: NPC has no chest.
-        if (npcAI.assignedChest == null)
+        currentNPC = npc;
+        IsDialogueActive = true;
+        dialoguePanel.SetActive(true);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        npcNameText.text = npc.npcName;
+        sentences.Clear();
+        continueButton.gameObject.SetActive(true);
+        continueButton.onClick.RemoveAllListeners();
+        continueButton.onClick.AddListener(DisplayNextSentence);
+
+        AI_Movement npcAI = npc.GetComponent<AI_Movement>();
+        if (npcAI != null)
         {
-            // Check if NPC is currently placing a chest
-            var state = npcAI.GetCurrentState();
-            if (state == AI_Movement.AIState.MovingToPlacement || state == AI_Movement.AIState.PlacingObject)
+            // Stage 1: NPC has no chest.
+            if (npcAI.assignedChest == null)
             {
-                sentences.Enqueue("I'm placing the chest you gave me. Please wait!");
-                HideAllTaskButtons();
+                // Check if NPC is currently placing a chest
+                var state = npcAI.GetCurrentState();
+                if (state == AI_Movement.AIState.MovingToPlacement || state == AI_Movement.AIState.PlacingObject)
+                {
+                    sentences.Enqueue("I'm placing the chest you gave me. Please wait!");
+                    HideAllTaskButtons();
+                }
+                else
+                {
+                    sentences.Enqueue("I can't work without a place to store things.");
+                    sentences.Enqueue("Could you give me a chest?");
+                    SetupGiveChestButton(npcAI);
+                }
             }
+            // Stage 2: NPC has a chest, ready for commands.
             else
             {
-                sentences.Enqueue("I can't work without a place to store things.");
-                sentences.Enqueue("Could you give me a chest?");
-                SetupGiveChestButton(npcAI);
+                sentences.Enqueue("I'm ready for my next task.");
+                SetupStandardButtons(npcAI);
             }
         }
-        // Stage 2: NPC has a chest, ready for commands.
         else
         {
-            sentences.Enqueue("I'm ready for my next task.");
-            SetupStandardButtons(npcAI);
+            foreach (string sentence in npc.dialogueLines) { sentences.Enqueue(sentence); }
         }
-    }
-    else
-    {
-        foreach (string sentence in npc.dialogueLines) { sentences.Enqueue(sentence); }
-    }
 
-    DisplayNextSentence();
-}
+        DisplayNextSentence();
+
+        if (CameraManager.Instance.isFirstPerson)
+            FindFirstObjectByType<MouseMovement>()?.SetCameraActive(false);
+        else
+            FindFirstObjectByType<FollowPlayer>()?.SetCameraActive(false);
+
+    }
 
     private void SetupGiveChestButton(AI_Movement npcAI)
     {
@@ -214,7 +220,8 @@ public class DialogueManager : MonoBehaviour
     void EndDialogue()
     {
         IsDialogueActive = false;
-        if (currentNPC!=null){
+        if (currentNPC != null)
+        {
             currentNPC.EndInteraction();
             currentNPC = null;
         }
@@ -223,6 +230,11 @@ public class DialogueManager : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        
+        if (CameraManager.Instance.isFirstPerson)
+        FindFirstObjectByType<MouseMovement>()?.SetCameraActive(true);
+    else
+        FindFirstObjectByType<FollowPlayer>()?.SetCameraActive(true);
     }
 
     private void OnAssignToChestClicked()
@@ -292,7 +304,7 @@ public class DialogueManager : MonoBehaviour
 
     private ChestController FindClosestUnassignedChest(Vector3 fromPosition)
     {
-        ChestController[] allChests = FindObjectsOfType<ChestController>();
+        ChestController[] allChests = FindObjectsByType<ChestController>(FindObjectsSortMode.None);
         ChestController closest = null;
         float minDistance = float.MaxValue;
 
@@ -313,7 +325,7 @@ public class DialogueManager : MonoBehaviour
 
     private InteractableObject FindClosestResource(string itemName)
     {
-        InteractableObject[] allResources = FindObjectsOfType<InteractableObject>();
+        InteractableObject[] allResources = FindObjectsByType<InteractableObject>(FindObjectsSortMode.None);
         InteractableObject closest = null;
         float minDistance = float.MaxValue;
 

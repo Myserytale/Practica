@@ -29,6 +29,9 @@ public class ChestInventoryUI : MonoBehaviour
         chestPanel.SetActive(true);
 
         InventoryUI.Instance.OpenInventory();
+        // Disable camera movement
+        FindFirstObjectByType<MouseMovement>()?.SetCameraActive(false);
+        FindFirstObjectByType<FollowPlayer>()?.SetCameraActive(false);
     }
 
     public void CloseChest()
@@ -37,6 +40,9 @@ public class ChestInventoryUI : MonoBehaviour
         currentChest = null;
 
         InventoryUI.Instance.CloseInventory();
+        // Enable camera movement
+        FindFirstObjectByType<MouseMovement>()?.SetCameraActive(true);
+        FindFirstObjectByType<FollowPlayer>()?.SetCameraActive(true);
     }
 
     public ChestController GetCurrentChest() => currentChest;
