@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections;
 
 public class EnemyAI : MonoBehaviour
 {
@@ -74,10 +75,17 @@ private bool isReturningToStart = false;
         // Set up health system events
         if (healthSystem != null)
         {
-            healthSystem.OnDeath += OnDeath;
+        healthSystem.OnTakeDamage += PlayTakeDamageAnimation;
         }
 
-        SetNewPatrolTarget();
+        //SetNewPatrolTarget();
+    }
+
+    void PlayTakeDamageAnimation()
+    {
+        if (currentState == EnemyState.Dead) return;
+        if (animator != null)
+            animator.SetTrigger("TakeDamage");
     }
 
     void Update()
@@ -287,12 +295,22 @@ void StartReturnToStart()
             animator.SetTrigger("Attack");
         }
 
-        // Deal damage to player
+        if (player != null)
+    {
         HealthSystem playerHealth = player.GetComponent<HealthSystem>();
         if (playerHealth != null)
         {
             playerHealth.TakeDamage(damage, gameObject);
+            Debug.Log("Enemy attacked player for " + damage + " damage!");
         }
+    }
+
+        // Deal damage to player
+        /*HealthSystem playerHealth = player.GetComponent<HealthSystem>();
+        if (playerHealth != null)
+        {
+            playerHealth.TakeDamage(damage, gameObject);
+        }*/
     }
 
     void SetNewPatrolTarget()
@@ -343,49 +361,75 @@ void StartReturnToStart()
         if (col) col.enabled = false;
 
         Debug.Log($"{gameObject.name} enemy died!");
+
+         StartCoroutine(DisappearAfterDeath());
+    }
+    
+    public void TakeDamage(float amount)
+    {
+        if (currentState == EnemyState.Dead) return;
+
+        // Play take damage animation
+        if (animator != null)
+        {
+            animator.SetTrigger("TakeDamage");
+        }
+
+        // Apply damage to health system
+        if (healthSystem != null)
+        {
+            healthSystem.TakeDamage(amount, null); // Or pass attacker if needed
+        }
+    }
+
+    private IEnumerator DisappearAfterDeath()
+    {
+        // Wait for death animation (adjust time as needed)
+        yield return new WaitForSeconds(2f);
+        Destroy(gameObject);
     }
 
     void OnDrawGizmos()  // Remove "Selected" from the name
-{
-    // Draw detection range
-    Gizmos.color = Color.yellow;
-    Gizmos.DrawWireSphere(transform.position, detectionRange);
-
-    // Draw attack range
-    Gizmos.color = Color.red;
-    Gizmos.DrawWireSphere(transform.position, attackRange);
-
-    // Draw patrol area
-    Gizmos.color = Color.blue;
-    Vector3 patrolCenter = Application.isPlaying ? startPosition : transform.position;
-    Gizmos.DrawWireSphere(patrolCenter, patrolRadius);
-    
-    // Optional: Draw path to patrol target
-    if (Application.isPlaying && patrolTarget != Vector3.zero)
     {
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawLine(transform.position, patrolTarget);
-    }
-}
+        // Draw detection range
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, detectionRange);
 
-[ContextMenu("Debug Attack Distance")]
-void DebugAttackDistance()
-{
-    if (player != null)
-    {
-        float dist = Vector3.Distance(transform.position, player.position);
-        Debug.Log($"=== ATTACK DISTANCE DEBUG ===");
-        Debug.Log($"Current distance to player: {dist:F2}");
-        Debug.Log($"Attack range setting: {attackRange}");
-        Debug.Log($"Agent stopping distance: {agent.stoppingDistance}");
-        Debug.Log($"Agent remaining distance: {agent.remainingDistance:F2}");
-        Debug.Log($"Can attack? {dist <= attackRange}");
-        Debug.Log($"Current state: {currentState}");
+        // Draw attack range
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, attackRange);
+
+        // Draw patrol area
+        Gizmos.color = Color.blue;
+        Vector3 patrolCenter = Application.isPlaying ? startPosition : transform.position;
+        Gizmos.DrawWireSphere(patrolCenter, patrolRadius);
         
-        if (dist > attackRange)
+        // Optional: Draw path to patrol target
+        if (Application.isPlaying && patrolTarget != Vector3.zero)
         {
-            Debug.Log($"TOO FAR: Need to be {attackRange - dist:F2} units closer");
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawLine(transform.position, patrolTarget);
         }
     }
-}
+
+    [ContextMenu("Debug Attack Distance")]
+    void DebugAttackDistance()
+    {
+        if (player != null)
+        {
+            float dist = Vector3.Distance(transform.position, player.position);
+            Debug.Log($"=== ATTACK DISTANCE DEBUG ===");
+            Debug.Log($"Current distance to player: {dist:F2}");
+            Debug.Log($"Attack range setting: {attackRange}");
+            Debug.Log($"Agent stopping distance: {agent.stoppingDistance}");
+            Debug.Log($"Agent remaining distance: {agent.remainingDistance:F2}");
+            Debug.Log($"Can attack? {dist <= attackRange}");
+            Debug.Log($"Current state: {currentState}");
+            
+            if (dist > attackRange)
+            {
+                Debug.Log($"TOO FAR: Need to be {attackRange - dist:F2} units closer");
+            }
+        }
+    }
 }
