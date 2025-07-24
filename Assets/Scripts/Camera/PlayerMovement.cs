@@ -126,9 +126,22 @@ public class PlayerMovement : MonoBehaviour
     
     void HandleMovement()
     {
+        // Use camera's yaw only for movement direction
+        Transform cam = Camera.main.transform; // Or use your own cameraTransform reference
+
+        Vector3 camForward = cam.forward;
+        camForward.y = 0f;
+        camForward.Normalize();
+
+        Vector3 camRight = cam.right;
+        camRight.y = 0f;
+        camRight.Normalize();
+
+        Vector3 move = camRight * moveInput.x + camForward * moveInput.y;
+
         // Calculate movement direction
-        Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
-        
+        //Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
+
         // Apply movement
         controller.Move(move * speed * Time.deltaTime);
     }

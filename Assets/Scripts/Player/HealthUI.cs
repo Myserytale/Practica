@@ -29,6 +29,22 @@ public class HealthUI : MonoBehaviour
             }
         }
     }
+
+    void Update()
+{
+    // Flash red when health is low
+    if (playerHealth != null && healthBarFill != null)
+    {
+        float healthPercent = playerHealth.currentHealth / playerHealth.maxHealth;
+        if (healthPercent <= lowHealthThreshold)
+        {
+            // Pulsing effect for low health
+            float pulse = Mathf.PingPong(Time.time * 2f, 1f);
+            Color currentColor = Color.Lerp(lowHealthColor, Color.white, pulse);
+            healthBarFill.color = currentColor;
+        }
+    }
+}
     
     void UpdateHealthUI(float currentHealth, float maxHealth)
     {

@@ -1,37 +1,81 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class MouseMovement : MonoBehaviour
+public class newCameraMovement : MonoBehaviour
 {
- 
+    [Header("Mouse Settings")]
     public float mouseSensitivity = 100f;
- 
-    float xRotation = 0f;
-    float YRotation = 0f;
- 
+    public Transform playerBody; // Drag Player GameObject here
+    
+    [Header("Look Constraints")]
+    public float minLookAngle = -90f;
+    public float maxLookAngle = 90f;
+    
+    [Header("Control")]
+    public bool cameraActive = true;
+    public KeyCode toggleCursorKey = KeyCode.Escape;
+    
+    private float xRotation = 0f;
+    private float yRotation = 0f;
+    
     void Start()
     {
-      //Locking the cursor to the middle of the screen and making it invisible
-      Cursor.lockState = CursorLockMode.Locked;
+        SetCameraActive(true);
+        
+        // Auto-find player if not assigned
+        if (playerBody == null)
+        {
+            playerBody = transform.parent; // Camera is child of Player
+        }
+        
+        // Get initial rotation
+        if (playerBody != null)
+        {
+            yRotation = playerBody.eulerAngles.y;
+        }
     }
- 
+    
     void Update()
     {
-       float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
-       float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
- 
-       //control rotation around x axis (Look up and down)
-       xRotation -= mouseY;
- 
-       //we clamp the rotation so we cant Over-rotate (like in real life)
-       xRotation = Mathf.Clamp(xRotation, -90f, 90f);
- 
-       //control rotation around y axis (Look up and down)
-       YRotation += mouseX;
- 
-       //applying both rotations
-       transform.localRotation = Quaternion.Euler(xRotation, YRotation, 0f);
- 
+        // Toggle cursor
+        if (Input.GetKeyDown(toggleCursorKey))
+        {
+            SetCameraActive(!cameraActive);
+        }
+        
+        if (!cameraActive) return;
+        
+        // Get raw mouse input (without Time.deltaTime for now)
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * 0.02f;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * 0.02f;
+        
+        // Accumulate rotations
+        xRotation -= mouseY;
+        xRotation = Mathf.Clamp(xRotation, minLookAngle, maxLookAngle);
+        
+        yRotation += mouseX;
+        
+        // Apply rotations
+        transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        
+        if (playerBody != null)
+        {
+            playerBody.rotation = Quaternion.Euler(0f, yRotation, 0f);
+        }
+    }
+    
+    public void SetCameraActive(bool active)
+    {
+        cameraActive = active;
+        
+        if (active)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
     }
 }

@@ -9,7 +9,7 @@ public class CameraManager : MonoBehaviour
     public GameObject firstPersonCamera;
     public GameObject thirdPersonCamera;
 
-    private bool isFirstPerson = true;
+    public bool isFirstPerson = true;
 
     private void Awake()
     {

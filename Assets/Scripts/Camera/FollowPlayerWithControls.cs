@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -10,26 +11,26 @@ public class FollowPlayer : MonoBehaviour
     [SerializeField] private bool lookAtTarget = true;
     [SerializeField] private Vector3 lookOffset = Vector3.zero;
     [SerializeField] private float rotationSpeed = 5f;
-    
+
     [Header("Camera Controls")]
     [SerializeField] private bool enableMouseLook = true;
     [SerializeField] private float mouseSensitivity = 2f;
     [SerializeField] private float verticalLookLimit = 80f;
     [SerializeField] private bool invertY = false;
-    
+
     [Header("Zoom Controls")]
     [SerializeField] private bool enableZoom = true;
     [SerializeField] private float zoomSpeed = 2f;
     [SerializeField] private float minZoom = 3f;
     [SerializeField] private float maxZoom = 15f;
-    
+
     [Header("Camera Smoothing")]
     [SerializeField] private bool enableSmoothing = true;
     [SerializeField] private float positionSmoothTime = 0.3f;
     [SerializeField] private float rotationSmoothTime = 0.1f;
 
 
-    
+
     // Private variables for camera control
     private float mouseX;
     private float mouseY;
@@ -37,7 +38,15 @@ public class FollowPlayer : MonoBehaviour
     private Vector3 currentVelocity;
     private Vector3 rotationVelocity;
     private bool isMouseLookActive = false;
-    
+
+    // Additional variables for camera position calculation
+    [Header("Custom Camera Positioning")]
+    [SerializeField] private float height = 5f;
+    [SerializeField] private float distance = 10f;
+    [SerializeField] private float minHeight = 1f;
+    [SerializeField] private float positionSmoothing = 5f;
+    [SerializeField] private float rotationSmoothing = 5f;
+
     void Start()
     {
         // We will now assign the target manually in the inspector
@@ -46,7 +55,7 @@ public class FollowPlayer : MonoBehaviour
         {
             Debug.LogWarning("FollowPlayer: Target is not assigned. The camera will not function.");
         }
-        
+
         // Initialize zoom
         currentZoom = Vector3.Distance(Vector3.zero, offset);
     }
@@ -60,7 +69,7 @@ public class FollowPlayer : MonoBehaviour
             UpdateCameraPosition();
         }
     }
-    
+
     void HandleInput()
     {
         // Handle mouse look input
@@ -68,38 +77,38 @@ public class FollowPlayer : MonoBehaviour
         {
             HandleMouseLook();
         }
-        
+
         // Handle zoom input
         if (enableZoom)
         {
             HandleZoom();
         }
-        
+
         // Handle cursor lock toggle (Right-click to toggle)
         if (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame)
         {
             ToggleCursorLock();
         }
     }
-    
+
     void HandleMouseLook()
     {
         if (Mouse.current != null)
         {
             Vector2 mouseDelta = Mouse.current.delta.ReadValue();
-            
+
             // Only apply mouse look if cursor is locked or mouse look is always active
             if (Cursor.lockState == CursorLockMode.Locked || isMouseLookActive)
             {
                 mouseX += mouseDelta.x * mouseSensitivity * Time.deltaTime;
                 mouseY += mouseDelta.y * mouseSensitivity * Time.deltaTime * (invertY ? 1 : -1);
-                
+
                 // Clamp vertical rotation
                 mouseY = Mathf.Clamp(mouseY, -verticalLookLimit, verticalLookLimit);
             }
         }
     }
-    
+
     void HandleZoom()
     {
         if (Mouse.current != null)
@@ -112,51 +121,75 @@ public class FollowPlayer : MonoBehaviour
             }
         }
     }
+
+    /*  void UpdateCameraPosition()
+      {
+          // Calculate rotation based on mouse input
+          Quaternion rotation = Quaternion.Euler(mouseY, mouseX, 0);
+
+          // Calculate offset with zoom
+          Vector3 zoomedOffset = offset.normalized * currentZoom;
+
+          // Apply rotation to offset
+          Vector3 rotatedOffset = rotation * zoomedOffset;
+
+          // Calculate desired position
+          Vector3 desiredPosition = target.position + rotatedOffset;
+
+          // Apply position with smoothing
+          if (enableSmoothing)
+          {
+              transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref currentVelocity, positionSmoothTime);
+          }
+          else
+          {
+              transform.position = Vector3.Lerp(transform.position, desiredPosition, followSpeed * Time.deltaTime);
+          }
+
+          // Handle rotation
+          if (lookAtTarget)
+          {
+              Vector3 lookDirection = (target.position + lookOffset) - transform.position;
+              if (lookDirection != Vector3.zero)
+              {
+                  Quaternion lookRotation = Quaternion.LookRotation(lookDirection);
+
+                  if (enableSmoothing)
+                  {
+                      transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, rotationSmoothTime * Time.deltaTime / Time.fixedDeltaTime);
+                  }
+                  else
+                  {
+                      transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, rotationSpeed * Time.deltaTime);
+                  }
+              }
+          }
+      }*/
     
     void UpdateCameraPosition()
     {
-        // Calculate rotation based on mouse input
-        Quaternion rotation = Quaternion.Euler(mouseY, mouseX, 0);
-        
-        // Calculate offset with zoom
-        Vector3 zoomedOffset = offset.normalized * currentZoom;
-        
-        // Apply rotation to offset
-        Vector3 rotatedOffset = rotation * zoomedOffset;
-        
         // Calculate desired position
-        Vector3 desiredPosition = target.position + rotatedOffset;
-        
-        // Apply position with smoothing
-        if (enableSmoothing)
+        Quaternion rotation = Quaternion.Euler(mouseY, mouseX, 0);
+        Vector3 direction = rotation * Vector3.back;
+
+        Vector3 desiredPosition = target.position + Vector3.up * height + direction * distance;
+
+        // Prevent camera from going below player's position + minHeight
+        float minY = target.position.y + minHeight;
+        if (desiredPosition.y < minY)
         {
-            transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref currentVelocity, positionSmoothTime);
+            desiredPosition.y = minY;
         }
-        else
-        {
-            transform.position = Vector3.Lerp(transform.position, desiredPosition, followSpeed * Time.deltaTime);
-        }
-        
-        // Handle rotation
-        if (lookAtTarget)
-        {
-            Vector3 lookDirection = (target.position + lookOffset) - transform.position;
-            if (lookDirection != Vector3.zero)
-            {
-                Quaternion lookRotation = Quaternion.LookRotation(lookDirection);
-                
-                if (enableSmoothing)
-                {
-                    transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, rotationSmoothTime * Time.deltaTime / Time.fixedDeltaTime);
-                }
-                else
-                {
-                    transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, rotationSpeed * Time.deltaTime);
-                }
-            }
-        }
+
+        // Smooth position
+        transform.position = Vector3.Lerp(transform.position, desiredPosition, positionSmoothing * Time.deltaTime);
+
+        // Look at target
+        Vector3 lookTarget = target.position + Vector3.up * (height * 0.5f);
+        Quaternion targetRotation = Quaternion.LookRotation(lookTarget - transform.position);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSmoothing * Time.deltaTime);
     }
-    
+
     void ToggleCursorLock()
     {
         if (Cursor.lockState == CursorLockMode.Locked)
@@ -172,22 +205,29 @@ public class FollowPlayer : MonoBehaviour
             Debug.Log("Cursor locked - Mouse look active");
         }
     }
-    
+
     // Public methods for external control
     public void SetTarget(Transform newTarget)
     {
         target = newTarget;
     }
-    
+
     public void SetZoom(float zoom)
     {
         currentZoom = Mathf.Clamp(zoom, minZoom, maxZoom);
     }
-    
+
     public void ResetCamera()
     {
         mouseX = 0;
         mouseY = 0;
         currentZoom = Vector3.Distance(Vector3.zero, offset);
+    }
+
+    public void SetCameraActive(bool active)
+    {
+        //enableMouseLook = active;
+        Cursor.lockState = active ? CursorLockMode.Locked : CursorLockMode.None;
+        Cursor.visible = !active;
     }
 }

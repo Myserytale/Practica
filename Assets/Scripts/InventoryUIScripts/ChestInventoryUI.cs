@@ -12,65 +12,37 @@ public class ChestInventoryUI : MonoBehaviour
     {
         Instance = this;
         chestPanel.SetActive(false);
-        var chestSlots = chestPanel.GetComponentsInChildren<InventoryUISlot>();
-        for (int i = 0; i < chestSlots.Length; i++) {
-            chestSlots[i].slotIndex = i;
-            chestSlots[i].owner = InventoryOwner.Chest;
-    }
-    }
-
-    // NEW: Subscribe to the event when the script starts
-    private void Start()
-    {
-        if (InventoryManager.Instance != null)
-        {
-            InventoryManager.Instance.onInventoryChanged += OnInventoryDataChanged;
-        }
-    }
-
-    // NEW: Unsubscribe when the script is destroyed to prevent errors
-    private void OnDestroy()
-    {
-        if (InventoryManager.Instance != null)
-        {
-            InventoryManager.Instance.onInventoryChanged -= OnInventoryDataChanged;
-        }
-    }
-
-    // NEW: This method is called whenever ANY inventory changes
-    private void OnInventoryDataChanged()
-    {
-        // If the chest UI is currently open, refresh it to show the latest data
-        if (IsChestOpen())
-        {
-            UpdateChestUI();
-        }
     }
 
     private void Update()
+{
+    // Close chest with Escape or I
+    if (IsChestOpen() && (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.I)))
     {
-        // Close chest with Escape or I
-        if (IsChestOpen() && (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.I)))
-        {
-            CloseChest();
-        }
+        CloseChest();
     }
+}
 
     public void OpenChest(ChestController chest)
     {
         currentChest = chest;
         chestPanel.SetActive(true);
-        InventoryUI.Instance.OpenInventory();
 
-        // ADDED: Immediately update the UI when the chest is opened
-        UpdateChestUI();
+        InventoryUI.Instance.OpenInventory();
+        // Disable camera movement
+        FindFirstObjectByType<newCameraMovement>()?.SetCameraActive(false);
+        FindFirstObjectByType<FollowPlayer>()?.SetCameraActive(false);
     }
 
     public void CloseChest()
     {
         chestPanel.SetActive(false);
         currentChest = null;
+
         InventoryUI.Instance.CloseInventory();
+        // Enable camera movement
+        FindFirstObjectByType<newCameraMovement>()?.SetCameraActive(true);
+        FindFirstObjectByType<FollowPlayer>()?.SetCameraActive(true);
     }
 
     public ChestController GetCurrentChest() => currentChest;
@@ -81,29 +53,30 @@ public class ChestInventoryUI : MonoBehaviour
     }
 
     public void UpdateChestUI()
+{
+    if (currentChest == null || chestPanel == null) return;
+
+    // Find all InventoryUISlot components under your chestPanel (or a slotsParent if you use one)
+    var chestSlots = chestPanel.GetComponentsInChildren<InventoryUISlot>();
+
+    // Clear all slot visuals
+    foreach (var slot in chestSlots)
     {
-        if (currentChest == null || chestPanel == null) return;
-
-        var chestSlots = chestPanel.GetComponentsInChildren<InventoryUISlot>();
-
-        // This part is important: Clear existing item icons before redrawing
-        foreach (var slot in chestSlots)
+        foreach (Transform child in slot.transform)
         {
-            foreach (Transform child in slot.transform)
-            {
-                Destroy(child.gameObject);
-            }
-        }
-
-        // Redraw items based on the chest's current inventory data
-        for (int i = 0; i < currentChest.chestInventory.Count && i < chestSlots.Length; i++)
-        {
-            InventorySlot dataSlot = currentChest.chestInventory[i];
-            if (dataSlot != null && dataSlot.item != null)
-            {
-                GameObject itemGO = Instantiate(InventoryUI.Instance.itemPrefab, chestSlots[i].transform);
-                itemGO.GetComponent<InventoryItemUI>().SetItem(dataSlot);
-            }
+            Destroy(child.gameObject);
         }
     }
+
+    // Draw items in chest slots
+    for (int i = 0; i < currentChest.chestInventory.Count && i < chestSlots.Length; i++)
+    {
+        InventorySlot dataSlot = currentChest.chestInventory[i];
+        if (dataSlot != null && dataSlot.item != null)
+        {
+            GameObject itemGO = Instantiate(InventoryUI.Instance.itemPrefab, chestSlots[i].transform);
+            itemGO.GetComponent<InventoryItemUI>().SetItem(dataSlot);
+        }
+    }
+}
 }

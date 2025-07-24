@@ -5,7 +5,9 @@ public class NewPlayerMovement : MonoBehaviour
 {
 [Header("Movement")]
     public CharacterController controller;
-    public float speed = 12f;
+    public float speed = 2.5f;
+    public float runMultiplier = 2f;
+    public Animator animator; // Optional: for animations
     public float gravity = -9.81f * 2;
     public float jumpHeight = 3f;
  
@@ -70,7 +72,8 @@ public class NewPlayerMovement : MonoBehaviour
         // Apply vertical movement
         controller.Move(velocity * Time.deltaTime);
     }
-    
+
+    private bool isRunning;
     void HandleInput()
     {
         // New Input System - using Keyboard class
@@ -82,6 +85,9 @@ public class NewPlayerMovement : MonoBehaviour
             if (Keyboard.current.sKey.isPressed) moveInput.y -= 1;
             if (Keyboard.current.aKey.isPressed) moveInput.x -= 1;
             if (Keyboard.current.dKey.isPressed) moveInput.x += 1;
+
+            // Run input
+            isRunning = Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed;
             
             // Jump input
             jumpInput = Keyboard.current.spaceKey.wasPressedThisFrame;
@@ -122,14 +128,25 @@ public class NewPlayerMovement : MonoBehaviour
         }
     }
     
-    void HandleMovement()
+   void HandleMovement()
+{
+    // Calculate movement direction
+    Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
+
+    //Choose speed
+    float currentSpeed = speed * (isRunning && moveInput.magnitude > 0 ? runMultiplier : 1f);
+
+    // Apply movement
+    controller.Move(move * currentSpeed * Time.deltaTime);
+
+    // Set animator Speed parameter
+    if (animator != null)
     {
-        // Calculate movement direction
-        Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
-        
-        // Apply movement
-        controller.Move(move * speed * Time.deltaTime);
+        float moveSpeed = new Vector2(moveInput.x, moveInput.y).magnitude;
+        animator.SetFloat("Speed", moveSpeed);
+        Debug.Log("Animator Speed: " + moveSpeed);
     }
+}
     
     void HandleJumping()
     {

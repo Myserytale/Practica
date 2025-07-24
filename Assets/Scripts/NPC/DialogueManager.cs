@@ -74,52 +74,58 @@ public class DialogueManager : MonoBehaviour
     }
 
     public void StartDialogue(NPCController npc)
-{
-    currentNPC = npc;
-    IsDialogueActive = true;
-    dialoguePanel.SetActive(true);
-    Cursor.lockState = CursorLockMode.None;
-    Cursor.visible = true;
-    npcNameText.text = npc.npcName;
-    sentences.Clear();
-    continueButton.gameObject.SetActive(true);
-    continueButton.onClick.RemoveAllListeners();
-    continueButton.onClick.AddListener(DisplayNextSentence);
-
-    AI_Movement npcAI = npc.GetComponent<AI_Movement>();
-    if (npcAI != null)
     {
-        // Stage 1: NPC has no chest.
-        if (npcAI.assignedChest == null)
+        currentNPC = npc;
+        IsDialogueActive = true;
+        dialoguePanel.SetActive(true);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        npcNameText.text = npc.npcName;
+        sentences.Clear();
+        continueButton.gameObject.SetActive(true);
+        continueButton.onClick.RemoveAllListeners();
+        continueButton.onClick.AddListener(DisplayNextSentence);
+
+        AI_Movement npcAI = npc.GetComponent<AI_Movement>();
+        if (npcAI != null)
         {
-            // Check if NPC is currently placing a chest
-            var state = npcAI.GetCurrentState();
-            if (state == AI_Movement.AIState.MovingToPlacement || state == AI_Movement.AIState.PlacingObject)
+            // Stage 1: NPC has no chest.
+            if (npcAI.assignedChest == null)
             {
-                sentences.Enqueue("I'm placing the chest you gave me. Please wait!");
-                HideAllTaskButtons();
+                // Check if NPC is currently placing a chest
+                var state = npcAI.GetCurrentState();
+                if (state == AI_Movement.AIState.MovingToPlacement || state == AI_Movement.AIState.PlacingObject)
+                {
+                    sentences.Enqueue("I'm placing the chest you gave me. Please wait!");
+                    HideAllTaskButtons();
+                }
+                else
+                {
+                    sentences.Enqueue("I can't work without a place to store things.");
+                    sentences.Enqueue("Could you give me a chest?");
+                    SetupGiveChestButton(npcAI);
+                }
             }
+            // Stage 2: NPC has a chest, ready for commands.
             else
             {
-                sentences.Enqueue("I can't work without a place to store things.");
-                sentences.Enqueue("Could you give me a chest?");
-                SetupGiveChestButton(npcAI);
+                sentences.Enqueue("I'm ready for my next task.");
+                SetupStandardButtons(npcAI);
             }
         }
-        // Stage 2: NPC has a chest, ready for commands.
         else
         {
-            sentences.Enqueue("I'm ready for my next task.");
-            SetupStandardButtons(npcAI);
+            foreach (string sentence in npc.dialogueLines) { sentences.Enqueue(sentence); }
         }
-    }
-    else
-    {
-        foreach (string sentence in npc.dialogueLines) { sentences.Enqueue(sentence); }
-    }
 
-    DisplayNextSentence();
-}
+        DisplayNextSentence();
+
+        if (CameraManager.Instance.isFirstPerson)
+            FindFirstObjectByType<newCameraMovement>()?.SetCameraActive(false);
+        else
+            FindFirstObjectByType<FollowPlayer>()?.SetCameraActive(false);
+
+    }
 
     private void SetupGiveChestButton(AI_Movement npcAI)
     {
@@ -184,8 +190,7 @@ public class DialogueManager : MonoBehaviour
             gatherStickButton.gameObject.SetActive(true);
             // Add listeners for the gather buttons
             gatherWoodButton.onClick.AddListener(OnGatherWoodClicked);
-            gatherStoneButton.onClick.AddListener(OnGatherStoneClicked);
-            gatherStickButton.onClick.AddListener(OnGatherStickClicked);
+            // ... add for stone and stick ...
         }
     }
 
@@ -215,7 +220,8 @@ public class DialogueManager : MonoBehaviour
     void EndDialogue()
     {
         IsDialogueActive = false;
-        if (currentNPC!=null){
+        if (currentNPC != null)
+        {
             currentNPC.EndInteraction();
             currentNPC = null;
         }
@@ -224,6 +230,11 @@ public class DialogueManager : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        
+        if (CameraManager.Instance.isFirstPerson)
+        FindFirstObjectByType<newCameraMovement>()?.SetCameraActive(true);
+    else
+        FindFirstObjectByType<FollowPlayer>()?.SetCameraActive(true);
     }
 
     private void OnAssignToChestClicked()
@@ -249,117 +260,42 @@ public class DialogueManager : MonoBehaviour
     }
 
     private void OnGatherWoodClicked()
-    {
-        if (currentNPC == null) return;
-        AI_Movement npcMovement = currentNPC.GetComponent<AI_Movement>();
-        if (npcMovement == null) return;
-
-        InteractableObject closestTree = FindClosestResource("Wood");
-        if (closestTree == null)
-        {
-            Debug.LogWarning("No trees found to gather from.");
-
-            // Create a random movement destination for testing
-            Vector3 randomDirection = new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f)).normalized;
-            Vector3 testDestination = currentNPC.transform.position + randomDirection * 10f;
-
-            Debug.Log($"No resources found. Moving to test position: {testDestination}");
-
-            AI_Movement.AITask moveTask = new AI_Movement.AITask
-            {
-                taskType = AI_Movement.AITaskType.Gather,
-                targetPosition = testDestination
-            };
-
-            npcMovement.AssignTask(moveTask);
-            EndDialogue();
-            return;
-        }
-
-        // Create a destination point that's 2 units away from the resource
-        Vector3 directionToTree = (closestTree.transform.position - currentNPC.transform.position).normalized;
-        Vector3 gatherPosition = closestTree.transform.position - directionToTree * 2f;
-
-        AI_Movement.AITask gatherTask = new AI_Movement.AITask
-        {
-            taskType = AI_Movement.AITaskType.Gather,
-            resourceTarget = closestTree,
-            targetPosition = gatherPosition  // Set an explicit position that's offset from the resource
-        };
-
-        npcMovement.AssignTask(gatherTask);
-        EndDialogue();
-    }
-private void OnGatherStoneClicked()
 {
     if (currentNPC == null) return;
     AI_Movement npcMovement = currentNPC.GetComponent<AI_Movement>();
     if (npcMovement == null) return;
 
-    InteractableObject closestStone = FindClosestResource("Stone");
-    if (closestStone == null)
+    InteractableObject closestTree = FindClosestResource("Wood");
+    if (closestTree == null)
     {
-        Debug.LogWarning("No stones found to gather from.");
+        Debug.LogWarning("No trees found to gather from.");
+        
+        // Create a random movement destination for testing
         Vector3 randomDirection = new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f)).normalized;
         Vector3 testDestination = currentNPC.transform.position + randomDirection * 10f;
-
+        
+        Debug.Log($"No resources found. Moving to test position: {testDestination}");
+        
         AI_Movement.AITask moveTask = new AI_Movement.AITask
         {
             taskType = AI_Movement.AITaskType.Gather,
             targetPosition = testDestination
         };
-
+        
         npcMovement.AssignTask(moveTask);
         EndDialogue();
         return;
     }
 
-    Vector3 directionToStone = (closestStone.transform.position - currentNPC.transform.position).normalized;
-    Vector3 gatherPosition = closestStone.transform.position - directionToStone * 2f;
+    // Create a destination point that's 2 units away from the resource
+    Vector3 directionToTree = (closestTree.transform.position - currentNPC.transform.position).normalized;
+    Vector3 gatherPosition = closestTree.transform.position - directionToTree * 2f;
 
     AI_Movement.AITask gatherTask = new AI_Movement.AITask
     {
         taskType = AI_Movement.AITaskType.Gather,
-        resourceTarget = closestStone,
-        targetPosition = gatherPosition
-    };
-
-    npcMovement.AssignTask(gatherTask);
-    EndDialogue();
-}
-
-private void OnGatherStickClicked()
-{
-    if (currentNPC == null) return;
-    AI_Movement npcMovement = currentNPC.GetComponent<AI_Movement>();
-    if (npcMovement == null) return;
-
-    InteractableObject closestStick = FindClosestResource("Stick");
-    if (closestStick == null)
-    {
-        Debug.LogWarning("No sticks found to gather from.");
-        Vector3 randomDirection = new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f)).normalized;
-        Vector3 testDestination = currentNPC.transform.position + randomDirection * 10f;
-
-        AI_Movement.AITask moveTask = new AI_Movement.AITask
-        {
-            taskType = AI_Movement.AITaskType.Gather,
-            targetPosition = testDestination
-        };
-
-        npcMovement.AssignTask(moveTask);
-        EndDialogue();
-        return;
-    }
-
-    Vector3 directionToStick = (closestStick.transform.position - currentNPC.transform.position).normalized;
-    Vector3 gatherPosition = closestStick.transform.position - directionToStick * 2f;
-
-    AI_Movement.AITask gatherTask = new AI_Movement.AITask
-    {
-        taskType = AI_Movement.AITaskType.Gather,
-        resourceTarget = closestStick,
-        targetPosition = gatherPosition
+        resourceTarget = closestTree,
+        targetPosition = gatherPosition  // Set an explicit position that's offset from the resource
     };
 
     npcMovement.AssignTask(gatherTask);
@@ -368,7 +304,7 @@ private void OnGatherStickClicked()
 
     private ChestController FindClosestUnassignedChest(Vector3 fromPosition)
     {
-        ChestController[] allChests = FindObjectsOfType<ChestController>();
+        ChestController[] allChests = FindObjectsByType<ChestController>(FindObjectsSortMode.None);
         ChestController closest = null;
         float minDistance = float.MaxValue;
 
@@ -389,7 +325,7 @@ private void OnGatherStickClicked()
 
     private InteractableObject FindClosestResource(string itemName)
     {
-        InteractableObject[] allResources = FindObjectsOfType<InteractableObject>();
+        InteractableObject[] allResources = FindObjectsByType<InteractableObject>(FindObjectsSortMode.None);
         InteractableObject closest = null;
         float minDistance = float.MaxValue;
 

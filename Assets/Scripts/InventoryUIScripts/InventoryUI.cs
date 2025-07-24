@@ -114,12 +114,19 @@ public class InventoryUI : MonoBehaviour
         inventoryPanel.SetActive(true);
         UpdateCursorState(true);
         UpdateUI();
+        // Disable camera movement
+        FindFirstObjectByType<newCameraMovement>()?.SetCameraActive(false);
+        FindFirstObjectByType<FollowPlayer>()?.SetCameraActive(false);
     }
 
     public void CloseInventory()
     {
         inventoryPanel.SetActive(false);
         UpdateCursorState(false);
+
+        // Enable camera movement
+        FindFirstObjectByType<newCameraMovement>()?.SetCameraActive(true);
+        FindFirstObjectByType<FollowPlayer>()?.SetCameraActive(true);
     }
 
     private void UpdateCursorState(bool isUIOpen)
